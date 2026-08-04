@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=IMAP Exporter
+Comment=Extract and analyze email metadata over IMAP
+Comment[pt_BR]=Extraia e analise metadados de e-mail por IMAP
+Exec=imap-exporter
+Icon=io.github.ehstbr.imapexporter
+Terminal=false
+Categories=Network;Email;Utility;
+Keywords=IMAP;email;metadata;CSV;ODS;
+Keywords[pt_BR]=IMAP;e-mail;metadados;CSV;ODS;
+StartupNotify=true

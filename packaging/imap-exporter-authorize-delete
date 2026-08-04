@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+# This helper deliberately does not read credentials, databases or arguments.
+# Reaching it through pkexec is the authorization result consumed by the app.
+[ "$#" -eq 0 ] || exit 1
+[ "$(id -u)" -eq 0 ] || exit 1
+
+case "${PKEXEC_UID:-}" in
+    ""|*[!0-9]*)
+        exit 1
+        ;;
+esac
+
+exit 0

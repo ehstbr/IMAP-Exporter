@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>IMAP Exporter</vendor>
+  <vendor_url>https://github.com/ehstbr/IMAP-Exporter</vendor_url>
+
+  <action id="io.github.ehstbr.imapexporter.remove-locked-account">
+    <description>Remove a locked IMAP Exporter account</description>
+    <description xml:lang="pt_BR">Remover uma conta bloqueada do IMAP Exporter</description>
+    <message>Administrative authentication is required to remove a locked IMAP Exporter account</message>
+    <message xml:lang="pt_BR">É necessária autenticação administrativa para remover uma conta bloqueada do IMAP Exporter</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/imap-exporter/imap-exporter-authorize-delete</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "gmail",
+    "name": "Gmail",
+    "host": "imap.gmail.com",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["gmail.com", "googlemail.com"],
+    "password_hint": "O Gmail exige uma senha de app em contas com verificação em duas etapas. Não use a senha normal da Conta Google."
+  },
+  {
+    "id": "uol",
+    "name": "UOL Mail",
+    "host": "imap.uol.com.br",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["uol.com.br"],
+    "password_hint": "Use a senha da caixa postal UOL e confirme no webmail que o acesso IMAP está ativado."
+  },
+  {
+    "id": "bol",
+    "name": "BOL Mail",
+    "host": "imap.bol.com.br",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["bol.com.br"],
+    "password_hint": "Use a senha da caixa postal BOL. O servidor IMAP seguro utiliza a porta 993."
+  },
+  {
+    "id": "terra",
+    "name": "Terra Mail",
+    "host": "imap.terra.com.br",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["terra.com.br"],
+    "password_hint": "Use a senha da caixa postal Terra. O servidor IMAP seguro utiliza SSL/TLS na porta 993."
+  },
+  {
+    "id": "yahoo",
+    "name": "Yahoo Mail",
+    "host": "imap.mail.yahoo.com",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["yahoo.com", "yahoo.com.br", "ymail.com", "rocketmail.com"],
+    "password_hint": "O Yahoo normalmente exige uma senha de aplicativo para conexões IMAP de terceiros."
+  },
+  {
+    "id": "icloud",
+    "name": "iCloud Mail",
+    "host": "imap.mail.me.com",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["icloud.com", "me.com", "mac.com"],
+    "password_hint": "Use uma senha específica de app da Conta Apple. A verificação em duas etapas precisa estar ativada."
+  },
+  {
+    "id": "aol",
+    "name": "AOL Mail",
+    "host": "imap.aol.com",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["aol.com"],
+    "password_hint": "Use a senha da conta ou, quando solicitado pela AOL, gere uma senha de aplicativo para o cliente IMAP."
+  },
+  {
+    "id": "gmx",
+    "name": "GMX Mail",
+    "host": "imap.gmx.com",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["gmx.com", "gmx.us", "gmx.net", "gmx.de"],
+    "password_hint": "Ative POP3/IMAP nas configurações do GMX antes de conectar. Use a senha da conta."
+  },
+  {
+    "id": "mailru",
+    "name": "Mail.ru",
+    "host": "imap.mail.ru",
+    "port": 993,
+    "security": "ssl",
+    "domains": ["mail.ru", "inbox.ru", "list.ru", "bk.ru"],
+    "password_hint": "O Mail.ru exige uma senha específica para aplicativos externos; a senha normal da conta não funciona no IMAP."
+  }
+]

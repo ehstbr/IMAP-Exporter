@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.ehstbr.imapexporter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>IMAP Exporter</name>
+  <summary>Synchronize and analyze email metadata over IMAP</summary>
+  <summary xml:lang="pt-BR">Sincronize e analise metadados de e-mail por IMAP</summary>
+  <description>
+    <p>
+      IMAP Exporter synchronizes message headers, reconciles local metadata
+      with the server, ranks senders and domains, supports controlled cleanup,
+      ranks large messages and attachments, and exports metadata to CSV or
+      ODS. A lightweight on-demand reader can
+      display one selected message and download attachments on request.
+    </p>
+    <p xml:lang="pt-BR">
+      O IMAP Exporter sincroniza cabeçalhos, reconcilia os metadados locais
+      com o servidor, classifica remetentes e domínios, permite limpeza
+      controlada, classifica mensagens e anexos por tamanho e exporta
+      metadados para CSV ou ODS. Um leitor leve sob demanda exibe uma mensagem
+      escolhida e baixa anexos somente quando solicitado.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.ehstbr.imapexporter.desktop</launchable>
+  <url type="homepage">https://github.com/ehstbr/IMAP-Exporter</url>
+  <developer id="br.com.eduhcommerce">
+    <name>Eduardo Henrique Silva Teixeira</name>
+  </developer>
+  <provides>
+    <binary>imap-exporter</binary>
+  </provides>
+  <releases>
+    <release version="0.4.12" date="2026-08-03"/>
+    <release version="0.4.11" date="2026-08-02"/>
+    <release version="0.4.10" date="2026-08-02"/>
+    <release version="0.4.9" date="2026-07-29"/>
+    <release version="0.4.8" date="2026-07-29"/>
+    <release version="0.4.7" date="2026-07-29"/>
+    <release version="0.4.6" date="2026-07-29"/>
+    <release version="0.4.5" date="2026-07-29"/>
+    <release version="0.4.4" date="2026-07-29"/>
+    <release version="0.4.3" date="2026-07-29"/>
+    <release version="0.4.2" date="2026-07-29"/>
+    <release version="0.4.1" date="2026-07-29"/>
+    <release version="0.4.0" date="2026-07-29"/>
+    <release version="0.3.12" date="2026-07-29"/>
+    <release version="0.3.11" date="2026-07-29"/>
+    <release version="0.3.10" date="2026-07-29"/>
+    <release version="0.3.9" date="2026-07-29"/>
+    <release version="0.3.8" date="2026-07-29"/>
+    <release version="0.3.7" date="2026-07-29"/>
+    <release version="0.3.6" date="2026-07-29"/>
+    <release version="0.3.5" date="2026-07-29"/>
+    <release version="0.3.4" date="2026-07-29"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

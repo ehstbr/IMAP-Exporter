@@ -1,0 +1,170 @@
+.portable-action {
+  min-height: 32px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.account-actions {
+  margin-top: 0;
+}
+
+.compact-action {
+  min-width: 34px;
+  min-height: 32px;
+  padding: 4px;
+}
+
+.app-mark {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0.72;
+}
+
+.log-view {
+  padding: 8px;
+}
+
+.summary-card {
+  border-radius: 10px;
+  border: 1px solid alpha(@theme_fg_color, 0.14);
+  background-color: alpha(@theme_fg_color, 0.035);
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.summary-details {
+  border-radius: 8px;
+  border: 1px solid alpha(@theme_fg_color, 0.10);
+  background-color: alpha(@theme_fg_color, 0.02);
+}
+
+.selection-action-bar {
+  padding-top: 4px;
+}
+
+.rounded-scroll-frame {
+  border-radius: 10px;
+  border: 1px solid alpha(@theme_fg_color, 0.14);
+  background-color: alpha(@theme_fg_color, 0.025);
+}
+
+.rounded-scroll-frame .scroll-viewport-list {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.rounded-scroll-frame .scroll-viewport-list row {
+  border-radius: 0;
+}
+
+.folder-loading-card {
+  min-width: 360px;
+  padding: 28px 34px;
+  border-radius: 12px;
+  border: 1px solid alpha(@theme_fg_color, 0.12);
+  background-color: alpha(@theme_fg_color, 0.035);
+}
+
+.message-open-hint {
+  opacity: 0.72;
+}
+
+.message-reader-stack {
+  min-height: 480px;
+}
+
+.message-reader-state-card {
+  min-width: 360px;
+  padding: 30px 34px;
+  border-radius: 12px;
+  border: 1px solid alpha(@theme_fg_color, 0.12);
+  background-color: alpha(@theme_fg_color, 0.035);
+}
+
+.message-reader-header {
+  padding: 6px 10px 10px;
+}
+
+.message-reader-overview {
+  padding: 2px 4px 8px;
+}
+
+.message-reader-section {
+  padding: 6px 9px;
+  border-radius: 9px;
+  border: 1px solid alpha(@theme_fg_color, 0.12);
+  background-color: alpha(@theme_fg_color, 0.018);
+}
+
+.message-reader-section-content {
+  padding: 4px 1px 2px;
+}
+
+.message-reader-meta-row {
+  min-height: 22px;
+}
+
+.message-reader-meta-key {
+  font-weight: 700;
+  opacity: 0.62;
+}
+
+.message-reader-meta-value {
+  opacity: 0.86;
+}
+
+.message-reader-body-card {
+  border-radius: 10px;
+  border: 1px solid alpha(@theme_fg_color, 0.14);
+  background-color: @theme_base_color;
+}
+
+.message-reader-section .attachment-list {
+  border-radius: 8px;
+  border: 1px solid alpha(@theme_fg_color, 0.10);
+  background-color: @theme_base_color;
+}
+
+.message-reader-section .attachment-list row:first-child {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.message-reader-section .attachment-list row:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.attachment-row-progress {
+  min-height: 42px;
+}
+
+.attachment-row-progress trough {
+  min-height: 42px;
+  border: none;
+  border-radius: 7px;
+  background-color: transparent;
+}
+
+.attachment-row-progress progress {
+  min-height: 42px;
+  border: none;
+  border-radius: 7px;
+  background-color: rgba(53, 132, 228, 0.40);
+  background-color: alpha(@theme_selected_bg_color, 0.46);
+}
+
+.message-reader,
+.message-reader text {
+  background-color: transparent;
+  color: @theme_fg_color;
+}
+
+.message-reader-privacy {
+  padding: 2px 4px;
+}

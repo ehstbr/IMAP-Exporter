@@ -1,0 +1,14 @@
+Package: imap-exporter
+Version: @VERSION@
+Section: mail
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0, openssl, ca-certificates, hicolor-icon-theme, pkexec
+Maintainer: Eduardo Henrique Silva Teixeira <contato@eduhcommerce.com.br>
+Homepage: https://github.com/ehstbr/IMAP-Exporter
+Description: Synchronize and analyze email metadata over IMAP
+ IMAP Exporter synchronizes message headers, reconciles local metadata with
+ the server, ranks senders, domains, large messages and attachments, supports
+ controlled cleanup, and exports data to CSV or ODS. A lightweight on-demand
+ reader displays text parts and downloads selected attachments without
+ storing message content in its database.
