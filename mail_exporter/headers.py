@@ -12,6 +12,8 @@ from email.utils import getaddresses, parsedate_to_datetime
 from typing import Any
 from urllib.parse import unquote
 
+from .i18n import tr
+
 
 def header_text(message: Message, name: str) -> str:
     value = message.get(name)
@@ -246,7 +248,7 @@ def _parse_bodystructure_tree(value: str) -> list[Any]:
 
     parsed = parse_value()
     if not isinstance(parsed, list):
-        raise ValueError("BODYSTRUCTURE inválido")
+        raise ValueError(tr("BODYSTRUCTURE inválido"))
     return parsed
 
 
@@ -328,7 +330,7 @@ def _bodystructure_attachments(
         attachments.append(
             {
                 "part_number": prefix,
-                "filename": filename or f"anexo-{prefix}",
+                "filename": filename or f"attachment-{prefix}",
                 "extension": _attachment_extension(filename),
                 "content_type": content_type,
                 "disposition": disposition or "ATTACHMENT",
@@ -406,10 +408,10 @@ def parse_bodystructure_fetch_item(
     metadata_text = _metadata_text(metadata)
     uid_raw = _regex_value(r"\bUID\s+(\d+)", metadata_text)
     if not uid_raw:
-        raise ValueError("Resposta BODYSTRUCTURE sem UID")
+            raise ValueError(tr("Resposta BODYSTRUCTURE sem UID"))
     raw_structure = _parenthesized_value(metadata_text, "BODYSTRUCTURE")
     if not raw_structure:
-        raise ValueError("Resposta FETCH sem BODYSTRUCTURE")
+            raise ValueError(tr("Resposta FETCH sem BODYSTRUCTURE"))
     tree = _parse_bodystructure_tree(f"({raw_structure})")
     root_prefix = "" if tree and isinstance(tree[0], list) else "1"
     attachments = _bodystructure_attachments(
@@ -438,7 +440,7 @@ def parse_fetch_item(
     metadata_text = _metadata_text(metadata)
     uid_raw = _regex_value(r"\bUID\s+(\d+)", metadata_text)
     if not uid_raw:
-        raise ValueError("Resposta FETCH sem UID")
+        raise ValueError(tr("Resposta FETCH sem UID"))
     uid = int(uid_raw)
     message = BytesParser(policy=policy.default).parsebytes(header_bytes or b"")
 

@@ -3,6 +3,21 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.4.13] - 2026-08-03
+
+### Compatibilidade e internacionalização
+
+- Removida a reutilização automática da pasta de dados do nome antigo do
+  aplicativo. O programa agora usa somente `~/.local/share/imap-exporter`.
+- Removidos os aliases antigos de variável de ambiente, nome de banco,
+  migrações de esquema e formato de credencial legado.
+- O script de execução do código-fonte foi renomeado de `executar.sh` para
+  `run.sh` e suas mensagens foram padronizadas em inglês.
+- Textos dinâmicos de interface, erros, progresso, exportações CSV/ODS e dados
+  de provedores passaram a respeitar integralmente o idioma selecionado.
+- Adicionados testes de regressão para impedir a reutilização de dados antigos
+  e detectar textos sem tradução no modo inglês.
+
 ## [0.4.12] - 2026-08-03
 
 ### Interface
@@ -90,6 +105,7 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.4.13]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.13
 [0.4.12]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.12
 [0.4.11]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.11
 [0.4.10]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.10

@@ -21,7 +21,7 @@ sudo apt install python3 python3-gi gir1.2-gtk-4.0 openssl \
 Execute o aplicativo:
 
 ```bash
-./executar.sh
+./run.sh
 ```
 
 Execute os testes:
@@ -30,7 +30,7 @@ Execute os testes:
 python3 -m unittest discover -s tests -v
 python3 -m json.tool locales/pt_BR.json >/dev/null
 python3 -m json.tool locales/en.json >/dev/null
-bash -n executar.sh packaging/build-deb.sh
+bash -n run.sh packaging/build-deb.sh
 ```
 
 ## Envio de alterações
@@ -54,4 +54,3 @@ operação concluída antes da confirmação do servidor.
 - Prefira bibliotecas da distribuição e da biblioteca padrão.
 - Evite novas dependências sem justificar a necessidade.
 - Mantenha as linhas de interface curtas e os textos traduzíveis.
-

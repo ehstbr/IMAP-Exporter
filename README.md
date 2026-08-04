@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.4.12" src="https://img.shields.io/badge/version-0.4.12-3584e4">
+  <img alt="Version 0.4.13" src="https://img.shields.io/badge/version-0.4.13-3584e4">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-26a269">
   <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -129,7 +129,7 @@ memory. Attachment bytes are written only to a location chosen by the user.
 
 `Other IMAP server` accepts any service compatible with password authentication
 over IMAP SSL/TLS. Outlook.com, Hotmail, and other OAuth2-only services are not
-included because version 0.4.12 does not implement OAuth2. Proton Mail requires
+included because version 0.4.13 does not implement OAuth2. Proton Mail requires
 its Bridge application rather than a regular direct IMAP connection.
 
 Provider requirements may change. Confirm IMAP access and password requirements
@@ -142,7 +142,7 @@ in the provider's current documentation.
 On Debian, Ubuntu, Lubuntu, Linux Mint, and derivatives:
 
 ```bash
-sudo apt install ./imap-exporter_0.4.12_all.deb
+sudo apt install ./imap-exporter_0.4.13_all.deb
 ```
 
 Using `apt install` allows the system to install the declared dependencies:
@@ -156,14 +156,14 @@ The application has no `pip` dependencies. On a standard Ubuntu desktop, extract
 the source archive and run:
 
 ```bash
-./executar.sh
+./run.sh
 ```
 
 If executable permissions were not preserved:
 
 ```bash
-chmod +x executar.sh
-./executar.sh
+chmod +x run.sh
+./run.sh
 ```
 
 ### Clone the repository
@@ -180,7 +180,7 @@ Then clone and run:
 ```bash
 git clone https://github.com/ehstbr/IMAP-Exporter.git
 cd IMAP-Exporter
-./executar.sh
+./run.sh
 ```
 
 Administrative removal of a locked account depends on the privileged helper and
@@ -192,12 +192,12 @@ directly from the source tree.
 New installations store the SQLite database at:
 
 ```text
-~/.local/share/imap-exporter/dados.sqlite3
+~/.local/share/imap-exporter/imap-exporter.sqlite3
 ```
 
-If the legacy `~/.local/share/gmail-header-exporter` directory already exists
-and the new directory does not, it continues to be used automatically so the
-application rename does not lose accounts, history, or preferences.
+Only this directory and database filename are used. Paths, environment
+variables, databases, schemas, and credential formats from earlier releases
+are not migrated or reused automatically.
 
 ## How synchronization and cleanup work
 

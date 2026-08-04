@@ -11,6 +11,7 @@ from typing import Any
 from xml.sax.saxutils import escape, quoteattr
 
 from .db import Database
+from .i18n import tr
 
 
 MESSAGE_COLUMNS = [
@@ -151,7 +152,7 @@ def export_csv(
     try:
         with temporary.open("w", encoding="utf-8-sig", newline="") as stream:
             writer = csv.writer(stream, delimiter=";", quoting=csv.QUOTE_MINIMAL)
-            writer.writerow([label for _, label in MESSAGE_COLUMNS])
+            writer.writerow([tr(label) for _, label in MESSAGE_COLUMNS])
             rows = database.iter_messages(
                 account_ids,
                 sender_emails,
@@ -189,7 +190,7 @@ def _write_ods_table(
     stream.write(f"<table:table table:name={quoteattr(name)}>")
     stream.write("<table:table-row>")
     for _, label in columns:
-        _write_ods_cell(stream, label)
+        _write_ods_cell(stream, tr(label))
     stream.write("</table:table-row>")
     amount = 0
     for amount, row in enumerate(rows, start=1):
@@ -252,7 +253,7 @@ def export_ods(
             stream.write(prefix)
             _write_ods_table(
                 stream,
-                "Mensagens",
+                tr("Mensagens"),
                 MESSAGE_COLUMNS,
                 database.iter_messages(
                     account_ids,
@@ -260,11 +261,11 @@ def export_ods(
                     domains,
                     message_ids,
                 ),
-                lambda current: progress("Mensagens", current),
+                lambda current: progress(tr("Mensagens"), current),
             )
             _write_ods_table(
                 stream,
-                "Destinatários",
+                tr("Destinatários"),
                 RECIPIENT_COLUMNS,
                 database.iter_recipients(
                     account_ids,
@@ -272,11 +273,11 @@ def export_ods(
                     domains,
                     message_ids,
                 ),
-                lambda current: progress("Destinatários", current),
+                lambda current: progress(tr("Destinatários"), current),
             )
             _write_ods_table(
                 stream,
-                "Remetentes",
+                tr("Remetentes"),
                 SENDER_COLUMNS,
                 database.export_sender_summary(
                     account_ids,
@@ -287,7 +288,7 @@ def export_ods(
             )
             _write_ods_table(
                 stream,
-                "Domínios",
+                tr("Domínios"),
                 DOMAIN_COLUMNS,
                 database.domain_summary(
                     account_ids,
@@ -298,7 +299,7 @@ def export_ods(
             )
             _write_ods_table(
                 stream,
-                "Anexos",
+                tr("Anexos"),
                 ATTACHMENT_COLUMNS,
                 database.iter_attachments(
                     account_ids,
@@ -306,11 +307,11 @@ def export_ods(
                     domains,
                     message_ids,
                 ),
-                lambda current: progress("Anexos", current),
+                lambda current: progress(tr("Anexos"), current),
             )
             _write_ods_table(
                 stream,
-                "Erros",
+                tr("Erros"),
                 ERROR_COLUMNS,
                 [] if selected_export else database.export_errors(account_ids),
             )

@@ -18,6 +18,7 @@ from typing import Any
 
 from .db import Database, utc_now
 from .headers import parse_bodystructure_fetch_item, parse_fetch_item
+from .i18n import tr
 
 
 HEADER_FIELDS = (
@@ -163,7 +164,9 @@ def _decode_transfer_payload(
         return payload
     except (binascii.Error, ValueError) as exc:
         raise RuntimeError(
-            f"Não foi possível decodificar os dados MIME: {exc}"
+            tr("Não foi possível decodificar os dados MIME: {detail}").format(
+                detail=exc
+            )
         ) from exc
 
 
@@ -267,7 +270,11 @@ def parse_list_line(raw: bytes | str) -> dict[str, Any]:
         text.strip(),
     )
     if not match:
-        raise ValueError(f"Resposta LIST desconhecida: {text[:160]}")
+        raise ValueError(
+            tr("Resposta LIST desconhecida: {response}").format(
+                response=text[:160]
+            )
+        )
     flags = [flag for flag in match.group("flags").split() if flag]
     delimiter = _unquote_imap(match.group("delimiter"))
     wire_name = _unquote_imap(match.group("name"))
@@ -494,8 +501,10 @@ class MailExtractor:
         uid = int(target.get("uid") or 0)
         if not mailbox_name or uid <= 0:
             raise RuntimeError(
-                "A mensagem não possui uma localização IMAP válida. "
-                "Sincronize a conta e tente novamente."
+                tr(
+                    "A mensagem não possui uma localização IMAP válida. "
+                    "Sincronize a conta e tente novamente."
+                )
             )
 
         with ImapConnection(account, password) as connection:
@@ -508,7 +517,9 @@ class MailExtractor:
             )
             if status != "OK":
                 raise RuntimeError(
-                    f'Não foi possível abrir “{mailbox_name}” para leitura.'
+                    tr("Não foi possível abrir “{mailbox}” para leitura.").format(
+                        mailbox=mailbox_name
+                    )
                 )
 
             status, values = client.uid(
@@ -519,8 +530,16 @@ class MailExtractor:
             if status != "OK":
                 detail = imap_response_text(values)
                 raise RuntimeError(
-                    "O servidor não conseguiu localizar ou ler esta mensagem."
-                    + (f" Detalhes: {detail}" if detail else "")
+                    tr(
+                        "O servidor não conseguiu localizar ou ler esta "
+                        "mensagem.{details}"
+                    ).format(
+                        details=(
+                            tr(" Detalhes: {detail}").format(detail=detail)
+                            if detail
+                            else ""
+                        )
+                    )
                 )
 
             metadata_chunks: list[bytes] = []
@@ -539,7 +558,7 @@ class MailExtractor:
                     metadata_chunks.append(item)
             if raw_headers is None:
                 raise RuntimeError(
-                    "O servidor não retornou o cabeçalho desta mensagem."
+                    tr("O servidor não retornou o cabeçalho desta mensagem.")
                 )
             try:
                 structure = parse_bodystructure_fetch_item(
@@ -547,8 +566,10 @@ class MailExtractor:
                 )
             except ValueError as exc:
                 raise RuntimeError(
-                    "O servidor não retornou uma estrutura MIME utilizável "
-                    "para esta mensagem."
+                    tr(
+                        "O servidor não retornou uma estrutura MIME utilizável "
+                        "para esta mensagem."
+                    )
                 ) from exc
 
             message_pk = int(target.get("id") or 0)
@@ -575,9 +596,11 @@ class MailExtractor:
             )
             if not reader_parts:
                 raise RuntimeError(
-                    "Esta mensagem não possui uma parte de texto de até 5 MB "
-                    "que o leitor leve possa exibir. Os anexos continuam "
-                    "disponíveis para download."
+                    tr(
+                        "Esta mensagem não possui uma parte de texto de até 5 MB "
+                        "que o leitor leve possa exibir. Os anexos continuam "
+                        "disponíveis para download."
+                    )
                 )
             reader_part = reader_parts[0]
             part_number = str(reader_part.get("part_number") or "")
@@ -589,8 +612,16 @@ class MailExtractor:
             if status != "OK":
                 detail = imap_response_text(part_values)
                 raise RuntimeError(
-                    "O servidor não conseguiu ler a parte textual da mensagem."
-                    + (f" Detalhes: {detail}" if detail else "")
+                    tr(
+                        "O servidor não conseguiu ler a parte textual da "
+                        "mensagem.{details}"
+                    ).format(
+                        details=(
+                            tr(" Detalhes: {detail}").format(detail=detail)
+                            if detail
+                            else ""
+                        )
+                    )
                 )
             raw_body = next(
                 (
@@ -604,12 +635,14 @@ class MailExtractor:
             )
             if raw_body is None:
                 raise RuntimeError(
-                    "O servidor não retornou a parte textual da mensagem."
+                    tr("O servidor não retornou a parte textual da mensagem.")
                 )
             if len(raw_body) > max_bytes:
                 raise RuntimeError(
-                    "A parte textual desta mensagem ultrapassa o limite de "
-                    "5 MB do leitor leve."
+                    tr(
+                        "A parte textual desta mensagem ultrapassa o limite de "
+                        "5 MB do leitor leve."
+                    )
                 )
             return parse_reader_part(raw_headers, raw_body, reader_part)
 
@@ -630,15 +663,19 @@ class MailExtractor:
         encoded_size = int(attachment.get("size_bytes") or 0)
         if not mailbox_name or uid <= 0:
             raise RuntimeError(
-                "A mensagem não possui uma localização IMAP válida. "
-                "Sincronize a conta e tente novamente."
+                tr(
+                    "A mensagem não possui uma localização IMAP válida. "
+                    "Sincronize a conta e tente novamente."
+                )
             )
         if not re.fullmatch(r"\d+(?:\.\d+)*", part_number):
-            raise RuntimeError("A seção IMAP deste anexo é inválida.")
+            raise RuntimeError(tr("A seção IMAP deste anexo é inválida."))
         if encoded_size > max_bytes:
             raise RuntimeError(
-                "Este anexo ultrapassa o limite de segurança de 256 MB "
-                "para download pelo aplicativo."
+                tr(
+                    "Este anexo ultrapassa o limite de segurança de 256 MB "
+                    "para download pelo aplicativo."
+                )
             )
         chunk_size = max(4, min(int(chunk_size), 4 * 1024 * 1024))
         chunk_size -= chunk_size % 4
@@ -662,7 +699,9 @@ class MailExtractor:
             )
             if status != "OK":
                 raise RuntimeError(
-                    f'Não foi possível abrir “{mailbox_name}” para leitura.'
+                    tr("Não foi possível abrir “{mailbox}” para leitura.").format(
+                        mailbox=mailbox_name
+                    )
                 )
             check_cancelled()
 
@@ -677,8 +716,16 @@ class MailExtractor:
                 if fetch_status != "OK":
                     detail = imap_response_text(values)
                     raise RuntimeError(
-                        "O servidor não conseguiu baixar este anexo."
-                        + (f" Detalhes: {detail}" if detail else "")
+                        tr(
+                            "O servidor não conseguiu baixar este "
+                            "anexo.{details}"
+                        ).format(
+                            details=(
+                                tr(" Detalhes: {detail}").format(detail=detail)
+                                if detail
+                                else ""
+                            )
+                        )
                     )
                 payload = next(
                     (
@@ -692,7 +739,7 @@ class MailExtractor:
                 )
                 if payload is None:
                     raise RuntimeError(
-                        "O servidor não retornou os dados do anexo."
+                        tr("O servidor não retornou os dados do anexo.")
                     )
                 return payload
 
@@ -718,8 +765,10 @@ class MailExtractor:
                     received += len(chunk)
                     if received > max_bytes:
                         raise RuntimeError(
-                            "Este anexo ultrapassa o limite de segurança de "
-                            "256 MB para download pelo aplicativo."
+                            tr(
+                                "Este anexo ultrapassa o limite de segurança de "
+                                "256 MB para download pelo aplicativo."
+                            )
                         )
                     if progress is not None:
                         progress(
@@ -731,14 +780,16 @@ class MailExtractor:
                 encoded = b"".join(chunks)
                 if not encoded:
                     raise RuntimeError(
-                        "O servidor não retornou os dados do anexo."
+                        tr("O servidor não retornou os dados do anexo.")
                     )
                 if progress is not None and received != encoded_size:
                     progress(len(encoded), len(encoded))
             if len(encoded) > max_bytes:
                 raise RuntimeError(
-                    "Este anexo ultrapassa o limite de segurança de 256 MB "
-                    "para download pelo aplicativo."
+                    tr(
+                        "Este anexo ultrapassa o limite de segurança de 256 MB "
+                        "para download pelo aplicativo."
+                    )
                 )
             check_cancelled()
 
@@ -782,7 +833,9 @@ class MailExtractor:
                 )
                 if status != "OK":
                     raise RuntimeError(
-                        f'Não foi possível abrir “{mailbox_name}”.'
+                        tr("Não foi possível abrir “{mailbox}”.").format(
+                            mailbox=mailbox_name
+                        )
                     )
                 mailbox_targets.sort(key=lambda item: int(item["uid"]))
                 for start in range(0, len(mailbox_targets), batch_size):
@@ -814,9 +867,20 @@ class MailExtractor:
                     if status != "OK":
                         detail = imap_response_text(values)
                         raise RuntimeError(
-                            f"Falha ao analisar o lote {uid_set} de "
-                            f'“{mailbox_name}”.'
-                            + (f" Detalhes: {detail}" if detail else "")
+                            tr(
+                                "Falha ao analisar o lote {uids} de "
+                                "“{mailbox}”.{details}"
+                            ).format(
+                                uids=uid_set,
+                                mailbox=mailbox_name,
+                                details=(
+                                    tr(" Detalhes: {detail}").format(
+                                        detail=detail
+                                    )
+                                    if detail
+                                    else ""
+                                ),
+                            )
                         )
                     records: list[dict[str, Any]] = []
                     seen_uids: set[int] = set()
@@ -892,15 +956,17 @@ class MailExtractor:
         progress: ProgressCallback | None = None,
     ) -> list[dict[str, Any]]:
         progress = progress or (lambda event: None)
-        progress({"type": "phase", "text": "Conectando ao servidor IMAP…"})
+        progress({"type": "phase", "text": tr("Conectando ao servidor IMAP…")})
         folders: list[dict[str, Any]] = []
         with ImapConnection(account, password) as connection:
             client = connection.client
             assert client is not None
-            progress({"type": "phase", "text": "Descobrindo pastas…"})
+            progress({"type": "phase", "text": tr("Descobrindo pastas…")})
             status, data = client.list()
             if status != "OK":
-                raise RuntimeError("O servidor não retornou a lista de pastas.")
+                raise RuntimeError(
+                    tr("O servidor não retornou a lista de pastas.")
+                )
             parsed = []
             for line in data or []:
                 if not line:
@@ -913,15 +979,21 @@ class MailExtractor:
                     parsed.append(item)
             if not parsed:
                 raise RuntimeError(
-                    "O servidor não retornou nenhuma pasta IMAP selecionável."
+                    tr(
+                        "O servidor não retornou nenhuma pasta IMAP "
+                        "selecionável."
+                    )
                 )
             for index, item in enumerate(parsed, start=1):
                 progress(
                     {
                         "type": "folder",
-                        "text": (
-                            f'Verificando pasta {index} de {len(parsed)}: '
-                            f'{item["remote_name"]}'
+                        "text": tr(
+                            "Verificando pasta {current} de {total}: {mailbox}"
+                        ).format(
+                            current=index,
+                            total=len(parsed),
+                            mailbox=item["remote_name"],
                         ),
                         "current": index,
                         "total": len(parsed),
@@ -967,7 +1039,10 @@ class MailExtractor:
             }
         if (trash_mailbox.get("special_use") or "").lower() != "\\trash":
             raise RuntimeError(
-                "A pasta de destino não foi identificada pelo servidor como Lixeira."
+                tr(
+                    "A pasta de destino não foi identificada pelo servidor "
+                    "como Lixeira."
+                )
             )
 
         grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -982,7 +1057,9 @@ class MailExtractor:
         progress(
             {
                 "type": "cleanup",
-                "text": f"Preparando {total:,} mensagens…".replace(",", "."),
+                "text": tr("Preparando {messages} mensagens…").format(
+                    messages=f"{total:,}".replace(",", ".")
+                ),
                 "moved": 0,
                 "total": total,
             }
@@ -1002,9 +1079,11 @@ class MailExtractor:
                 and not supports_gmail_labels
             ):
                 raise RuntimeError(
-                    "Este servidor não oferece MOVE, UIDPLUS nem o mecanismo "
-                    "de Lixeira do Gmail. A operação foi cancelada para não "
-                    "expurgar outras mensagens por engano."
+                    tr(
+                        "Este servidor não oferece MOVE, UIDPLUS nem o mecanismo "
+                        "de Lixeira do Gmail. A operação foi cancelada para não "
+                        "expurgar outras mensagens por engano."
+                    )
                 )
             if supports_gmail_labels:
                 cleanup_method = "X-GM-LABELS"
@@ -1015,10 +1094,9 @@ class MailExtractor:
             progress(
                 {
                     "type": "cleanup_capabilities",
-                    "text": (
-                        f"Método seguro selecionado pelo servidor: "
-                        f"{cleanup_method}."
-                    ),
+                    "text": tr(
+                        "Método seguro selecionado pelo servidor: {method}."
+                    ).format(method=cleanup_method),
                     "method": cleanup_method,
                     "moved": 0,
                     "total": total,
@@ -1044,7 +1122,9 @@ class MailExtractor:
                 )
                 if status != "OK":
                     raise RuntimeError(
-                        f'Não foi possível abrir “{mailbox_name}” para gravação.'
+                        tr(
+                            "Não foi possível abrir “{mailbox}” para gravação."
+                        ).format(mailbox=mailbox_name)
                     )
 
                 mailbox_batches = (
@@ -1068,12 +1148,14 @@ class MailExtractor:
                     progress(
                         {
                             "type": "cleanup",
-                            "text": (
-                                f'Lote {batch_number}/{mailbox_batches} de '
-                                f'“{mailbox_name}”: movendo {len(batch):,} '
-                                "mensagens…"
-                            ).replace(
-                                ",", "."
+                            "text": tr(
+                                "Lote {batch}/{batches} de “{mailbox}”: "
+                                "movendo {messages} mensagens…"
+                            ).format(
+                                batch=batch_number,
+                                batches=mailbox_batches,
+                                mailbox=mailbox_name,
+                                messages=f"{len(batch):,}".replace(",", "."),
                             ),
                             "moved": len(moved_ids),
                             "total": total,
@@ -1117,15 +1199,23 @@ class MailExtractor:
                                     if item
                                 )
                                 raise RuntimeError(
-                                    (
+                                    tr(
                                         "O Gmail recusou mover um lote de "
-                                        f"{len(batch):,} mensagens de "
-                                        f'“{mailbox_name}” para a Lixeira.'
-                                    ).replace(",", ".")
-                                    + (
-                                        f" Detalhes do servidor: {details}"
-                                        if details
-                                        else ""
+                                        "{messages} mensagens de “{mailbox}” "
+                                        "para a Lixeira.{details}"
+                                    ).format(
+                                        messages=f"{len(batch):,}".replace(
+                                            ",", "."
+                                        ),
+                                        mailbox=mailbox_name,
+                                        details=(
+                                            tr(
+                                                " Detalhes do servidor: "
+                                                "{detail}"
+                                            ).format(detail=details)
+                                            if details
+                                            else ""
+                                        ),
                                     )
                                 )
                         for item in batch:
@@ -1164,11 +1254,13 @@ class MailExtractor:
                         )
                         if status != "OK":
                             raise RuntimeError(
-                                (
+                                tr(
                                     "O servidor recusou mover um lote de "
-                                    f"{len(batch):,} mensagens de "
-                                    f'“{mailbox_name}”.'
-                                ).replace(",", ".")
+                                    "{messages} mensagens de “{mailbox}”."
+                                ).format(
+                                    messages=f"{len(batch):,}".replace(",", "."),
+                                    mailbox=mailbox_name,
+                                )
                             )
                         uid_mapping = copyuid_mapping(client, move_values)
                         batch_undo_items = [
@@ -1189,10 +1281,12 @@ class MailExtractor:
                         )
                         if status != "OK":
                             raise RuntimeError(
-                                (
+                                tr(
                                     "O servidor recusou copiar um lote de "
-                                    f"{len(batch):,} mensagens para a Lixeira."
-                                ).replace(",", ".")
+                                    "{messages} mensagens para a Lixeira."
+                                ).format(
+                                    messages=f"{len(batch):,}".replace(",", ".")
+                                )
                             )
                         uid_mapping = copyuid_mapping(client, copy_values)
                         batch_undo_items = [
@@ -1212,18 +1306,22 @@ class MailExtractor:
                         )
                         if status != "OK":
                             raise RuntimeError(
-                                (
+                                tr(
                                     "O servidor recusou marcar um lote de "
-                                    f"{len(batch):,} mensagens para remoção."
-                                ).replace(",", ".")
+                                    "{messages} mensagens para remoção."
+                                ).format(
+                                    messages=f"{len(batch):,}".replace(",", ".")
+                                )
                             )
                         status, _ = client.uid("EXPUNGE", uid_set)
                         if status != "OK":
                             raise RuntimeError(
-                                (
+                                tr(
                                     "O servidor recusou concluir um lote de "
-                                    f"{len(batch):,} mensagens com UIDPLUS."
-                                ).replace(",", ".")
+                                    "{messages} mensagens com UIDPLUS."
+                                ).format(
+                                    messages=f"{len(batch):,}".replace(",", ".")
+                                )
                             )
 
                     moved_ids.extend(int(item["message_pk"]) for item in batch)
@@ -1231,10 +1329,13 @@ class MailExtractor:
                     progress(
                         {
                             "type": "cleanup",
-                            "text": (
-                                f'{len(moved_ids):,} de {total:,} mensagens '
-                                "movidas para a Lixeira"
-                            ).replace(",", "."),
+                            "text": tr(
+                                "{moved} de {total} mensagens movidas para a "
+                                "Lixeira"
+                            ).format(
+                                moved=f"{len(moved_ids):,}".replace(",", "."),
+                                total=f"{total:,}".replace(",", "."),
+                            ),
                             "moved": len(moved_ids),
                             "total": total,
                             "message_ids": [
@@ -1280,7 +1381,10 @@ class MailExtractor:
             }
         if (trash_mailbox.get("special_use") or "").lower() != "\\trash":
             raise RuntimeError(
-                "A pasta de origem não foi identificada pelo servidor como Lixeira."
+                tr(
+                    "A pasta de origem não foi identificada pelo servidor "
+                    "como Lixeira."
+                )
             )
         strategies = {
             str(item.get("strategy") or "") for item in undo_items
@@ -1293,8 +1397,10 @@ class MailExtractor:
         )
         if not valid_strategy_set:
             raise RuntimeError(
-                "Os identificadores de reversão não usam estratégias "
-                "compatíveis e seguras."
+                tr(
+                    "Os identificadores de reversão não usam estratégias "
+                    "compatíveis e seguras."
+                )
             )
 
         total = len(undo_items)
@@ -1310,14 +1416,19 @@ class MailExtractor:
             )
             if status != "OK":
                 raise RuntimeError(
-                    "Não foi possível abrir a Lixeira para reverter a operação."
+                    tr(
+                        "Não foi possível abrir a Lixeira para reverter a "
+                        "operação."
+                    )
                 )
 
             if strategies <= gmail_strategies:
                 if not getattr(connection, "gmail_extensions", False):
                     raise RuntimeError(
-                        "O servidor deixou de oferecer os identificadores "
-                        "estáveis do Gmail necessários para a reversão."
+                        tr(
+                            "O servidor deixou de oferecer os identificadores "
+                            "estáveis do Gmail necessários para a reversão."
+                        )
                     )
                 for index, item in enumerate(undo_items, start=1):
                     if cancel_event is not None and cancel_event.is_set():
@@ -1347,8 +1458,10 @@ class MailExtractor:
                     ]
                     if status != "OK" or len(found) != 1:
                         raise RuntimeError(
-                            "Não foi possível localizar de forma única na "
-                            "Lixeira uma mensagem já movida."
+                            tr(
+                                "Não foi possível localizar de forma única na "
+                                "Lixeira uma mensagem já movida."
+                            )
                         )
                     trash_uid = str(found[0])
                     labels = gmail_label_set(
@@ -1363,8 +1476,10 @@ class MailExtractor:
                         )
                         if status != "OK":
                             raise RuntimeError(
-                                "O Gmail recusou restaurar os marcadores "
-                                "originais de uma mensagem."
+                                tr(
+                                    "O Gmail recusou restaurar os marcadores "
+                                    "originais de uma mensagem."
+                                )
                             )
                     status, _ = client.uid(
                         "STORE",
@@ -1374,15 +1489,21 @@ class MailExtractor:
                     )
                     if status != "OK":
                         raise RuntimeError(
-                            "O Gmail recusou retirar uma mensagem da Lixeira."
+                            tr(
+                                "O Gmail recusou retirar uma mensagem da "
+                                "Lixeira."
+                            )
                         )
                     restored_ids.append(int(item["message_pk"]))
                     progress(
                         {
                             "type": "undo",
-                            "text": (
-                                f"{index:,} de {total:,} mensagens restauradas"
-                            ).replace(",", "."),
+                            "text": tr(
+                                "{restored} de {total} mensagens restauradas"
+                            ).format(
+                                restored=f"{index:,}".replace(",", "."),
+                                total=f"{total:,}".replace(",", "."),
+                            ),
                             "restored": len(restored_ids),
                             "total": total,
                             "message_ids": [int(item["message_pk"])],
@@ -1396,8 +1517,10 @@ class MailExtractor:
                 supports_uidplus = "UIDPLUS" in connection.capabilities
                 if not supports_move and not supports_uidplus:
                     raise RuntimeError(
-                        "O servidor deixou de oferecer MOVE ou UIDPLUS, "
-                        "necessário para uma reversão segura."
+                        tr(
+                            "O servidor deixou de oferecer MOVE ou UIDPLUS, "
+                            "necessário para uma reversão segura."
+                        )
                     )
                 for source_mailbox, mailbox_items in grouped.items():
                     source_wire = encode_modified_utf7(source_mailbox)
@@ -1417,8 +1540,10 @@ class MailExtractor:
                             )
                             if status != "OK":
                                 raise RuntimeError(
-                                    f'O servidor recusou restaurar mensagens '
-                                    f'para “{source_mailbox}”.'
+                                    tr(
+                                        "O servidor recusou restaurar mensagens "
+                                        "para “{mailbox}”."
+                                    ).format(mailbox=source_mailbox)
                                 )
                         else:
                             status, _ = client.uid(
@@ -1428,8 +1553,10 @@ class MailExtractor:
                             )
                             if status != "OK":
                                 raise RuntimeError(
-                                    f'O servidor recusou copiar mensagens de '
-                                    f'volta para “{source_mailbox}”.'
+                                    tr(
+                                        "O servidor recusou copiar mensagens "
+                                        "de volta para “{mailbox}”."
+                                    ).format(mailbox=source_mailbox)
                                 )
                             status, _ = client.uid(
                                 "STORE",
@@ -1439,13 +1566,18 @@ class MailExtractor:
                             )
                             if status != "OK":
                                 raise RuntimeError(
-                                    "O servidor recusou concluir a reversão."
+                                    tr(
+                                        "O servidor recusou concluir a "
+                                        "reversão."
+                                    )
                                 )
                             status, _ = client.uid("EXPUNGE", uid_set)
                             if status != "OK":
                                 raise RuntimeError(
-                                    "O servidor recusou expurgar somente as "
-                                    "cópias já restauradas da Lixeira."
+                                    tr(
+                                        "O servidor recusou expurgar somente as "
+                                        "cópias já restauradas da Lixeira."
+                                    )
                                 )
                         message_ids = [
                             int(item["message_pk"]) for item in batch
@@ -1454,10 +1586,14 @@ class MailExtractor:
                         progress(
                             {
                                 "type": "undo",
-                                "text": (
-                                    f"{len(restored_ids):,} de {total:,} "
-                                    "mensagens restauradas"
-                                ).replace(",", "."),
+                                "text": tr(
+                                    "{restored} de {total} mensagens restauradas"
+                                ).format(
+                                    restored=f"{len(restored_ids):,}".replace(
+                                        ",", "."
+                                    ),
+                                    total=f"{total:,}".replace(",", "."),
+                                ),
                                 "restored": len(restored_ids),
                                 "total": total,
                                 "message_ids": message_ids,
@@ -1467,7 +1603,9 @@ class MailExtractor:
                         break
             else:
                 raise RuntimeError(
-                    "A estratégia de reversão informada não é reconhecida."
+                    tr(
+                        "A estratégia de reversão informada não é reconhecida."
+                    )
                 )
 
         return {
@@ -1486,7 +1624,7 @@ class MailExtractor:
         pause_event: threading.Event,
         batch_size: int = 1000,
     ) -> dict[str, Any]:
-        progress({"type": "phase", "text": "Comparando com o servidor…"})
+        progress({"type": "phase", "text": tr("Comparando com o servidor…")})
         planned: list[tuple[dict[str, Any], list[int], list[int]]] = []
         job_id: int | None = None
         processed = inserted = updated = errors = 0
@@ -1512,13 +1650,17 @@ class MailExtractor:
                     status, _ = client.select(quote_mailbox(wire_name), readonly=True)
                     if status != "OK":
                         raise RuntimeError(
-                            f'Não foi possível abrir a pasta “{mailbox["remote_name"]}”.'
+                            tr(
+                                "Não foi possível abrir a pasta “{mailbox}”."
+                            ).format(mailbox=mailbox["remote_name"])
                         )
                     status, data = client.uid("search", None, "ALL")
                     if status != "OK":
                         raise RuntimeError(
-                            "Não foi possível listar as mensagens de "
-                            f'“{mailbox["remote_name"]}”.'
+                            tr(
+                                "Não foi possível listar as mensagens de "
+                                "“{mailbox}”."
+                            ).format(mailbox=mailbox["remote_name"])
                         )
                     uids = [
                         int(value)
@@ -1561,10 +1703,13 @@ class MailExtractor:
                         "total": total,
                         "checked": checked,
                         "job_id": job_id,
-                        "text": (
-                            f"{checked:,} mensagens comparadas · "
-                            f"{total:,} cabeçalhos novos para baixar"
-                        ).replace(",", "."),
+                        "text": tr(
+                            "{checked} mensagens comparadas · {new} cabeçalhos "
+                            "novos para baixar"
+                        ).format(
+                            checked=f"{checked:,}".replace(",", "."),
+                            new=f"{total:,}".replace(",", "."),
+                        ),
                     }
                 )
 
@@ -1590,7 +1735,9 @@ class MailExtractor:
                             )
                             if status == "OK":
                                 return response or []
-                            last_detail = f"resposta {status}"
+                            last_detail = tr("resposta {status}").format(
+                                status=status
+                            )
                         except (imaplib.IMAP4.abort, OSError) as exc:
                             last_detail = str(exc)
                         if attempt == 3:
@@ -1599,9 +1746,12 @@ class MailExtractor:
                         progress(
                             {
                                 "type": "phase",
-                                "text": (
-                                    f'Conexão interrompida em “{mailbox_name}”. '
-                                    f"Nova tentativa em {delay}s…"
+                                "text": tr(
+                                    "Conexão interrompida em “{mailbox}”. "
+                                    "Nova tentativa em {delay}s…"
+                                ).format(
+                                    mailbox=mailbox_name,
+                                    delay=delay,
                                 ),
                             }
                         )
@@ -1614,10 +1764,18 @@ class MailExtractor:
                             quote_mailbox(wire_name), readonly=True
                         )
                         if selected_status != "OK":
-                            last_detail = "não foi possível reabrir a pasta"
+                            last_detail = tr(
+                                "não foi possível reabrir a pasta"
+                            )
                     raise RuntimeError(
-                        f"Falha ao obter o lote {uid_set} de “{mailbox_name}” "
-                        f"após três tentativas: {last_detail}"
+                        tr(
+                            "Falha ao obter o lote {uids} de “{mailbox}” após "
+                            "três tentativas: {detail}"
+                        ).format(
+                            uids=uid_set,
+                            mailbox=mailbox_name,
+                            detail=last_detail,
+                        )
                     )
 
                 for mailbox, current_uids, new_uids in planned:
@@ -1627,7 +1785,9 @@ class MailExtractor:
                     status, _ = client.select(quote_mailbox(wire_name), readonly=True)
                     if status != "OK":
                         raise RuntimeError(
-                            f'Não foi possível abrir a pasta “{mailbox["remote_name"]}”.'
+                            tr(
+                                "Não foi possível abrir a pasta “{mailbox}”."
+                            ).format(mailbox=mailbox["remote_name"])
                         )
                     mailbox_completed = True
                     for start in range(0, len(new_uids), batch_size):

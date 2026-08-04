@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .i18n import tr
+
 
 PROVIDERS_FILE = Path(__file__).resolve().parent.parent / "providers.json"
 
@@ -47,11 +49,11 @@ def load_provider_presets() -> list[dict[str, Any]]:
     providers.append(
         {
             "id": "generic",
-            "name": "Outro servidor IMAP",
+            "name": tr("Outro servidor IMAP"),
             "host": "",
             "port": 993,
             "security": "ssl",
-            "password_hint": (
+            "password_hint": tr(
                 "Use a senha IMAP fornecida pelo seu provedor. Se a conta usar "
                 "verificação em duas etapas, procure pela opção de senha de "
                 "aplicativo."

@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
+from mail_exporter.i18n import get_language, set_language, tr as _
+
 try:
     import gi
 
@@ -20,16 +22,17 @@ try:
     from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango
 except (ImportError, ValueError) as exc:
     print(
-        "Não foi possível carregar a interface GTK 4.\n"
-        "Execute este aplicativo em um sistema Linux com GTK 4 e PyGObject.\n"
-        f"Detalhe: {exc}",
+        _(
+            "Não foi possível carregar a interface GTK 4.\n"
+            "Execute este aplicativo em um sistema Linux com GTK 4 e "
+            "PyGObject.\nDetalhe: {detail}"
+        ).format(detail=exc),
         file=sys.stderr,
     )
     raise SystemExit(1)
 
 from mail_exporter.db import Database
 from mail_exporter.exporters import export_csv, export_ods
-from mail_exporter.i18n import get_language, set_language, tr as _
 from mail_exporter.imap_service import (
     AttachmentDownloadCancelled,
     MailExtractor,
@@ -41,7 +44,7 @@ from mail_exporter.secrets import InvalidAccountPassword, SecretCipher, SecretEr
 
 APP_ID = "io.github.ehstbr.imapexporter"
 APP_NAME = "IMAP Exporter"
-APP_VERSION = "0.4.12"
+APP_VERSION = "0.4.13"
 PROJECT_URL = "https://github.com/ehstbr/IMAP-Exporter"
 MIT_LICENSE_FALLBACK = """MIT License
 
@@ -1319,9 +1322,9 @@ class MainWindow(Gtk.ApplicationWindow):
         )
         self.analyze_attachments_button.set_tooltip_text(
             _(
-                "Analisar somente mensagens pendentes de versões anteriores "
-                "ou de uma sincronização interrompida. Mensagens novas já "
-                "são analisadas durante a sincronização."
+                "Analisar somente mensagens pendentes após uma sincronização "
+                "interrompida. Mensagens novas já são analisadas durante a "
+                "sincronização."
             )
         )
         self.analyze_attachments_button.connect(
@@ -1529,9 +1532,9 @@ class MainWindow(Gtk.ApplicationWindow):
         if not rows:
             self._append_empty_result_row(
                 self.sender_list,
-                "Nenhum remetente encontrado."
+                _("Nenhum remetente encontrado.")
                 if self.sender_rows
-                else "Carregando o ranking de remetentes…",
+                else _("Carregando o ranking de remetentes…"),
             )
             return
         for item in rows:
@@ -1576,10 +1579,10 @@ class MainWindow(Gtk.ApplicationWindow):
             content.append(labels)
 
             amount = Gtk.Label(
-                label=(
-                    f'{int(item["messages"]):,} mensagens\n'
-                    f'{human_size(item.get("total_size"))}'
-                ).replace(",", "."),
+                label=_("{messages} mensagens\n{size}").format(
+                    messages=f'{int(item["messages"]):,}'.replace(",", "."),
+                    size=human_size(item.get("total_size")),
+                ),
                 xalign=1,
             )
             amount.set_justify(Gtk.Justification.RIGHT)
@@ -1629,9 +1632,9 @@ class MainWindow(Gtk.ApplicationWindow):
         if not rows:
             self._append_empty_result_row(
                 self.domain_list,
-                "Nenhum domínio encontrado."
+                _("Nenhum domínio encontrado.")
                 if self.domain_rows
-                else "Carregando o ranking de domínios…",
+                else _("Carregando o ranking de domínios…"),
             )
             return
         for item in rows:
@@ -1650,9 +1653,12 @@ class MainWindow(Gtk.ApplicationWindow):
             )
             check.set_sensitive(not protected)
             check.set_tooltip_text(
-                "Domínio compartilhado: selecione os remetentes individualmente."
+                _(
+                    "Domínio compartilhado: selecione os remetentes "
+                    "individualmente."
+                )
                 if protected
-                else "Selecionar todas as mensagens deste domínio"
+                else _("Selecionar todas as mensagens deste domínio")
             )
             check.connect("toggled", self._domain_cleanup_toggled, domain)
             content.append(check)
@@ -1669,13 +1675,13 @@ class MainWindow(Gtk.ApplicationWindow):
             title.add_css_class("heading")
             labels.append(title)
             detail_text = (
-                "Protegido · seleção somente por remetente"
+                _("Protegido · seleção somente por remetente")
                 if protected
-                else (
-                    f'{int(item["senders"]):,} remetentes · '
-                    f'{str(item.get("first_date") or "")[:10]} a '
-                    f'{str(item.get("last_date") or "")[:10]}'
-                ).replace(",", ".")
+                else _("{senders} remetentes · {first} a {last}").format(
+                    senders=f'{int(item["senders"]):,}'.replace(",", "."),
+                    first=str(item.get("first_date") or "")[:10],
+                    last=str(item.get("last_date") or "")[:10],
+                )
             )
             detail = Gtk.Label(
                 label=detail_text,
@@ -1687,10 +1693,10 @@ class MainWindow(Gtk.ApplicationWindow):
             content.append(labels)
 
             amount = Gtk.Label(
-                label=(
-                    f'{int(item["messages"]):,} mensagens\n'
-                    f'{human_size(item.get("total_size"))}'
-                ).replace(",", "."),
+                label=_("{messages} mensagens\n{size}").format(
+                    messages=f'{int(item["messages"]):,}'.replace(",", "."),
+                    size=human_size(item.get("total_size")),
+                ),
                 xalign=1,
             )
             amount.set_justify(Gtk.Justification.RIGHT)
@@ -2113,8 +2119,8 @@ class MainWindow(Gtk.ApplicationWindow):
         explanation = Gtk.Label(
             label=_(
                 "Mensagens novas já recebem essa análise junto com o "
-                "cabeçalho. Esta etapa completa registros antigos ou "
-                "interrompidos consultando apenas a estrutura MIME; nenhum "
+                "cabeçalho. Esta etapa completa registros interrompidos "
+                "consultando apenas a estrutura MIME; nenhum "
                 "anexo será baixado."
             ),
             wrap=True,
@@ -2376,7 +2382,7 @@ class MainWindow(Gtk.ApplicationWindow):
         return text.replace("T", " ")[:19]
 
     @staticmethod
-    def _safe_attachment_filename(value: Any, fallback: str = "anexo") -> str:
+    def _safe_attachment_filename(value: Any, fallback: str = "attachment") -> str:
         name = str(value or "").replace("\x00", "").strip()
         name = name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
         name = re.sub(r"[\x00-\x1f\x7f]", "_", name)
@@ -2396,7 +2402,7 @@ class MainWindow(Gtk.ApplicationWindow):
             alternate = directory / f"{stem} ({index}){suffix}"
             if not alternate.exists():
                 return alternate
-        raise RuntimeError("Não foi possível gerar um nome de arquivo livre.")
+        raise RuntimeError(_("Não foi possível gerar um nome de arquivo livre."))
 
     def _save_attachment_bytes(
         self,
@@ -2482,7 +2488,7 @@ class MainWindow(Gtk.ApplicationWindow):
             )
             filename = self._safe_attachment_filename(
                 attachment.get("filename"),
-                f'anexo-{attachment.get("part_number") or "arquivo"}',
+                f'attachment-{attachment.get("part_number") or "file"}',
             )
             button.set_tooltip_text(
                 _("Baixar {filename}").format(filename=filename)
@@ -2538,7 +2544,7 @@ class MainWindow(Gtk.ApplicationWindow):
             return
         filename = self._safe_attachment_filename(
             attachment.get("filename"),
-            f'anexo-{attachment.get("part_number") or "arquivo"}',
+            f'attachment-{attachment.get("part_number") or "file"}',
         )
         chooser = Gtk.FileChooserNative.new(
             _("Salvar anexo"),
@@ -2734,7 +2740,7 @@ class MainWindow(Gtk.ApplicationWindow):
                         GLib.idle_add(start_row, attachment)
                         filename = self._safe_attachment_filename(
                             attachment.get("filename"),
-                            f'anexo-{attachment.get("part_number") or index}',
+                            f'attachment-{attachment.get("part_number") or index}',
                         )
                         destination = self._available_download_path(
                             directory,
@@ -3451,7 +3457,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 set_margins(attachment_content, 6)
                 filename = self._safe_attachment_filename(
                     attachment.get("filename"),
-                    f'anexo-{attachment.get("part_number") or "arquivo"}',
+                    f'attachment-{attachment.get("part_number") or "file"}',
                 )
                 filename_label = Gtk.Label(
                     label=filename,
@@ -3959,10 +3965,12 @@ class MainWindow(Gtk.ApplicationWindow):
         )
         messages = int(preview["messages"])
         if messages:
-            selection_text = (
-                f"{messages:,} mensagens únicas selecionadas · "
-                f'{human_size(preview["total_size"])}'
-            ).replace(",", ".")
+            selection_text = _(
+                "{messages} mensagens únicas selecionadas · {size}"
+            ).format(
+                messages=f"{messages:,}".replace(",", "."),
+                size=human_size(preview["total_size"]),
+            )
         else:
             selection_text = _("Nenhuma mensagem selecionada")
         for label in self.cleanup_selection_labels:
@@ -4829,11 +4837,10 @@ class MainWindow(Gtk.ApplicationWindow):
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         set_margins(content, 18)
         label = Gtk.Label(
-            label=(
-                f'Digite a senha local de “{account["display_name"]}”. '
-                "As senhas ficarão somente na memória enquanto a conta "
-                "estiver desbloqueada."
-            ),
+            label=_(
+                "Digite a senha local de “{account}”. As senhas ficarão "
+                "somente na memória enquanto a conta estiver desbloqueada."
+            ).format(account=account["display_name"]),
             wrap=True,
             xalign=0,
         )
@@ -4941,7 +4948,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.start_button.set_sensitive(False)
         self.reload_folders_button.set_sensitive(False)
         self.folders_heading.set_text(
-            f'Pastas de {self.active_account["display_name"]}'
+            _("Pastas de {account}").format(
+                account=self.active_account["display_name"]
+            )
         )
 
         account = self.active_account
@@ -4950,7 +4959,7 @@ class MainWindow(Gtk.ApplicationWindow):
         def progress(event: dict[str, Any]) -> None:
             GLib.idle_add(
                 self.folder_loading_status.set_text,
-                event.get("text", "Consultando pastas…"),
+                event.get("text", _("Consultando pastas…")),
             )
 
         def work() -> None:
@@ -4996,7 +5005,12 @@ class MainWindow(Gtk.ApplicationWindow):
             self.folder_spinner.stop()
             self.start_button.set_sensitive(bool(self.folder_checks))
             self.reload_folders_button.set_sensitive(True)
-            print(f"Falha ao consultar as pastas: {detail}", file=sys.stderr)
+            print(
+                _("Falha ao consultar as pastas: {detail}").format(
+                    detail=detail
+                ),
+                file=sys.stderr,
+            )
             self._show_error("Falha ao consultar as pastas", detail)
             if is_reload:
                 self.folder_content_stack.set_visible_child_name("folders")
@@ -5030,12 +5044,17 @@ class MainWindow(Gtk.ApplicationWindow):
             name = Gtk.Label(label=folder["remote_name"], xalign=0)
             name.add_css_class("heading")
             labels.append(name)
-            special = folder.get("special_use") or "Pasta comum"
+            special = folder.get("special_use") or _("Pasta comum")
             count = folder.get("messages_count")
             detail = (
-                f'{special} · {int(count):,} mensagens'.replace(",", ".")
+                _("{special} · {count} mensagens").format(
+                    special=special,
+                    count=f"{int(count):,}".replace(",", "."),
+                )
                 if count is not None
-                else f"{special} · quantidade indisponível"
+                else _("{special} · quantidade indisponível").format(
+                    special=special
+                )
             )
             secondary = Gtk.Label(label=detail, xalign=0)
             secondary.add_css_class("dim-label")
@@ -5193,7 +5212,7 @@ class MainWindow(Gtk.ApplicationWindow):
             self.pause_button.set_sensitive(False)
             self.cancel_button.set_sensitive(False)
             self._show_error("A sincronização foi interrompida", detail)
-            self._append_log(f"ERRO: {detail}")
+            self._append_log(_("ERROR: {detail}").format(detail=detail))
             self._clear_active_credentials()
             return False
 
@@ -5203,7 +5222,9 @@ class MainWindow(Gtk.ApplicationWindow):
     def _handle_progress(self, event: dict[str, Any]) -> bool:
         kind = event.get("type")
         if kind in {"phase", "planned"}:
-            self.progress_phase.set_text(event.get("text", "Processando…"))
+            self.progress_phase.set_text(
+                event.get("text", _("Processando…"))
+            )
             self._append_log(event.get("text", ""))
         elif kind == "capabilities":
             features = []
@@ -5234,7 +5255,9 @@ class MainWindow(Gtk.ApplicationWindow):
             )
         elif kind == "batch":
             self.progress_phase.set_text(
-                f'Baixando novos cabeçalhos de “{event.get("mailbox", "")}”…'
+                _("Baixando novos cabeçalhos de “{mailbox}”…").format(
+                    mailbox=event.get("mailbox", "")
+                )
             )
             self._append_log(
                 _(
@@ -5259,14 +5282,16 @@ class MainWindow(Gtk.ApplicationWindow):
                 f"{processed:,} de {total:,}".replace(",", ".")
             )
             self.progress_speed.set_text(
-                f'{float(event.get("rate", 0)):.1f} mensagens/s'
+                _("{rate:.1f} mensagens/s").format(
+                    rate=float(event.get("rate", 0))
+                )
             )
             self.progress_changes.set_text(
-                (
-                    f'{int(event.get("inserted", 0)):,} novas · '
-                    f'{self.current_sync_missing:,} ausentes · '
-                    f'{int(event.get("errors", 0)):,} erros'
-                ).replace(",", ".")
+                _("{new} novas · {missing} ausentes · {errors} erros").format(
+                    new=f'{int(event.get("inserted", 0)):,}'.replace(",", "."),
+                    missing=f"{self.current_sync_missing:,}".replace(",", "."),
+                    errors=f'{int(event.get("errors", 0)):,}'.replace(",", "."),
+                )
             )
             self._append_log(
                 _(
@@ -5289,11 +5314,11 @@ class MainWindow(Gtk.ApplicationWindow):
         elif kind == "reconciled":
             self.current_sync_missing += int(event.get("missing", 0))
             self.progress_changes.set_text(
-                (
-                    f'{int(event.get("inserted", 0)):,} novas · '
-                    f'{self.current_sync_missing:,} ausentes · '
-                    f'{int(event.get("errors", 0)):,} erros'
-                ).replace(",", ".")
+                _("{new} novas · {missing} ausentes · {errors} erros").format(
+                    new=f'{int(event.get("inserted", 0)):,}'.replace(",", "."),
+                    missing=f"{self.current_sync_missing:,}".replace(",", "."),
+                    errors=f'{int(event.get("errors", 0)):,}'.replace(",", "."),
+                )
             )
             self._append_log(
                 _(
@@ -5454,8 +5479,10 @@ class MainWindow(Gtk.ApplicationWindow):
         def failure(detail: str) -> bool:
             self.export_status.set_visible(True)
             self.export_status.set_text(
-                "CSV e ODS continuam disponíveis para todas as mensagens. "
-                f"Não foi possível montar os rankings: {detail}"
+                _(
+                    "CSV e ODS continuam disponíveis para todas as mensagens. "
+                    "Não foi possível montar os rankings: {detail}"
+                ).format(detail=detail)
             )
             return False
 
@@ -5568,24 +5595,26 @@ class MainWindow(Gtk.ApplicationWindow):
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         set_margins(content, 20)
         heading = Gtk.Label(
-            label=(
-                f"Mover {mapped:,} mensagens para a Lixeira?"
-            ).replace(",", "."),
+            label=_("Mover {messages} mensagens para a Lixeira?").format(
+                messages=f"{mapped:,}".replace(",", ".")
+            ),
             wrap=True,
             xalign=0,
         )
         heading.add_css_class("title-3")
         content.append(heading)
-        detail_text = (
-            f"Volume original associado: {human_size(mapped_size)}.\n"
-            f'Destino: “{trash_mailbox["remote_name"]}”.\n\n'
+        detail_text = _(
+            "Volume original associado: {size}.\nDestino: “{destination}”.\n\n"
             "O aplicativo não esvaziará a Lixeira. Você poderá revisar ou "
             "restaurar as mensagens pelo webmail."
+        ).format(
+            size=human_size(mapped_size),
+            destination=trash_mailbox["remote_name"],
         )
         if skipped:
-            detail_text += (
-                f"\n\n{skipped:,} mensagens sem um UID atual serão ignoradas."
-            ).replace(",", ".")
+            detail_text += _(
+                "\n\n{messages} mensagens sem um UID atual serão ignoradas."
+            ).format(messages=f"{skipped:,}".replace(",", "."))
         detail = Gtk.Label(label=detail_text, wrap=True, xalign=0)
         detail.add_css_class("dim-label")
         content.append(detail)
@@ -6544,15 +6573,13 @@ class MainWindow(Gtk.ApplicationWindow):
             )
             return
         chooser = Gtk.FileChooserNative.new(
-            (
-                "Salvar exportação da seleção"
-                if selection_only
-                else "Salvar exportação completa"
-            ),
+            _("Salvar exportação da seleção")
+            if selection_only
+            else _("Salvar exportação completa"),
             self,
             Gtk.FileChooserAction.SAVE,
-            "Salvar",
-            "Cancelar",
+            _("Salvar"),
+            _("Cancelar"),
         )
         slug = (
             self.active_account["email"]
@@ -6617,9 +6644,9 @@ class MainWindow(Gtk.ApplicationWindow):
             button.set_sensitive(False)
         self.export_status.set_visible(True)
         self.export_status.set_text(
-            "Gerando o arquivo da seleção…"
+            _("Gerando o arquivo da seleção…")
             if selection_only
-            else "Gerando a exportação completa…"
+            else _("Gerando a exportação completa…")
         )
 
         def work() -> None:
@@ -6631,7 +6658,9 @@ class MainWindow(Gtk.ApplicationWindow):
                         destination,
                         lambda current: GLib.idle_add(
                             self.export_status.set_text,
-                            f"{current:,} linhas gravadas…".replace(",", "."),
+                            _("{rows} linhas gravadas…").format(
+                                rows=f"{current:,}".replace(",", ".")
+                            ),
                         ),
                         sender_emails=selected_senders,
                         domains=selected_domains,
@@ -6644,7 +6673,10 @@ class MainWindow(Gtk.ApplicationWindow):
                         destination,
                         lambda sheet, current: GLib.idle_add(
                             self.export_status.set_text,
-                            f"{sheet}: {current:,} linhas gravadas…".replace(",", "."),
+                            _("{sheet}: {rows} linhas gravadas…").format(
+                                sheet=sheet,
+                                rows=f"{current:,}".replace(",", "."),
+                            ),
                         ),
                         sender_emails=selected_senders,
                         domains=selected_domains,
@@ -6657,7 +6689,9 @@ class MainWindow(Gtk.ApplicationWindow):
         def success(path: str) -> bool:
             self._refresh_results_summary()
             self._update_cleanup_preview()
-            self.export_status.set_text(f"Arquivo salvo em: {path}")
+            self.export_status.set_text(
+                _("Arquivo salvo em: {path}").format(path=path)
+            )
             return False
 
         def failure(detail: str) -> bool:
@@ -6682,7 +6716,9 @@ class MainWindow(Gtk.ApplicationWindow):
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         set_margins(content, 20)
         heading = Gtk.Label(
-            label=f'Remover “{account["display_name"]}”?',
+            label=_("Remover “{account}”?").format(
+                account=account["display_name"]
+            ),
             wrap=True,
             xalign=0,
         )
@@ -7060,7 +7096,12 @@ class HeaderExporterApplication(Gtk.Application):
         try:
             provider.load_from_path(str(stylesheet))
         except GLib.Error as exc:
-            print(f"Não foi possível carregar o estilo: {exc}", file=sys.stderr)
+            print(
+                _("Não foi possível carregar o estilo: {detail}").format(
+                    detail=exc
+                ),
+                file=sys.stderr,
+            )
             return
         Gtk.StyleContext.add_provider_for_display(
             display,

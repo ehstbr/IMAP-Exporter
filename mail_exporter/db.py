@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from .i18n import tr
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -178,137 +180,6 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.executescript(SCHEMA)
-            columns = {
-                row["name"] for row in conn.execute("PRAGMA table_info(accounts)")
-            }
-            if "encrypted_secret" not in columns:
-                conn.execute(
-                    "ALTER TABLE accounts "
-                    "ADD COLUMN encrypted_secret TEXT NOT NULL DEFAULT ''"
-                )
-            message_columns = {
-                row["name"] for row in conn.execute("PRAGMA table_info(messages)")
-            }
-            if "trashed_at" not in message_columns:
-                conn.execute("ALTER TABLE messages ADD COLUMN trashed_at TEXT")
-            if "state" not in message_columns:
-                conn.execute(
-                    "ALTER TABLE messages "
-                    "ADD COLUMN state TEXT NOT NULL DEFAULT 'active'"
-                )
-            if "last_seen_at" not in message_columns:
-                conn.execute("ALTER TABLE messages ADD COLUMN last_seen_at TEXT")
-            if "missing_since" not in message_columns:
-                conn.execute("ALTER TABLE messages ADD COLUMN missing_since TEXT")
-            if "attachment_indexed" not in message_columns:
-                conn.execute(
-                    "ALTER TABLE messages ADD COLUMN attachment_indexed "
-                    "INTEGER NOT NULL DEFAULT 0"
-                )
-            if "attachment_count" not in message_columns:
-                conn.execute(
-                    "ALTER TABLE messages ADD COLUMN attachment_count "
-                    "INTEGER NOT NULL DEFAULT 0"
-                )
-            if "attachment_size_bytes" not in message_columns:
-                conn.execute(
-                    "ALTER TABLE messages ADD COLUMN attachment_size_bytes "
-                    "INTEGER NOT NULL DEFAULT 0"
-                )
-            if "attachment_indexed_at" not in message_columns:
-                conn.execute(
-                    "ALTER TABLE messages ADD COLUMN attachment_indexed_at TEXT"
-                )
-            conn.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_messages_account_attachment_size
-                    ON messages(account_id, attachment_size_bytes DESC)
-                """
-            )
-            conn.execute(
-                """
-                UPDATE messages
-                   SET trashed_at=COALESCE(updated_at, first_seen_at)
-                 WHERE trashed_at IS NULL AND labels_json LIKE ?
-                """,
-                ("%\\\\Trash%",),
-            )
-            conn.execute(
-                """
-                UPDATE messages
-                   SET state=CASE
-                           WHEN trashed_at IS NOT NULL THEN 'trashed'
-                           ELSE 'active'
-                       END,
-                       last_seen_at=COALESCE(
-                           last_seen_at, updated_at, first_seen_at
-                       )
-                 WHERE state IS NULL
-                    OR state NOT IN ('active', 'trashed', 'missing', 'removed')
-                    OR last_seen_at IS NULL
-                """
-            )
-            mapping_columns = {
-                row["name"]
-                for row in conn.execute("PRAGMA table_info(message_mailboxes)")
-            }
-            if "uidvalidity" not in mapping_columns:
-                conn.execute(
-                    "ALTER TABLE message_mailboxes ADD COLUMN uidvalidity INTEGER"
-                )
-                conn.execute(
-                    """
-                    UPDATE message_mailboxes
-                       SET uidvalidity=(
-                           SELECT uidvalidity FROM mailboxes
-                            WHERE mailboxes.id=message_mailboxes.mailbox_id
-                       )
-                    """
-                )
-            if "last_seen_at" not in mapping_columns:
-                conn.execute(
-                    "ALTER TABLE message_mailboxes ADD COLUMN last_seen_at TEXT"
-                )
-                conn.execute(
-                    """
-                    UPDATE message_mailboxes
-                       SET last_seen_at=(
-                           SELECT COALESCE(
-                               messages.last_seen_at,
-                               messages.updated_at,
-                               messages.first_seen_at
-                           )
-                             FROM messages
-                            WHERE messages.id=message_mailboxes.message_id_fk
-                       )
-                    """
-                )
-            if "missing_since" not in mapping_columns:
-                conn.execute(
-                    "ALTER TABLE message_mailboxes ADD COLUMN missing_since TEXT"
-                )
-            conn.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_messages_account_state
-                    ON messages(account_id, state)
-                """
-            )
-            now = utc_now()
-            conn.execute(
-                """
-                UPDATE messages
-                   SET state='missing',
-                       missing_since=COALESCE(missing_since, ?),
-                       updated_at=?
-                 WHERE state='active'
-                   AND NOT EXISTS (
-                       SELECT 1
-                         FROM message_mailboxes mm
-                        WHERE mm.message_id_fk=messages.id
-                   )
-                """,
-                (now, now),
-            )
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
@@ -1533,7 +1404,7 @@ class Database:
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         if (sender_email is None) == (domain is None):
-            raise ValueError("Informe exatamente um remetente ou domínio.")
+            raise ValueError(tr("Informe exatamente um remetente ou domínio."))
 
         if sender_email is not None:
             item_filter = "lower(TRIM(m.from_email))=lower(TRIM(?))"
@@ -1616,7 +1487,7 @@ class Database:
         date_to: str | None = None,
     ) -> int:
         if (sender_email is None) == (domain is None):
-            raise ValueError("Informe exatamente um remetente ou domínio.")
+            raise ValueError(tr("Informe exatamente um remetente ou domínio."))
 
         if sender_email is not None:
             item_filter = "lower(TRIM(m.from_email))=lower(TRIM(?))"

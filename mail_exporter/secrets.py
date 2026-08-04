@@ -9,6 +9,8 @@ import shutil
 import subprocess
 from typing import Any
 
+from .i18n import tr
+
 
 class SecretError(RuntimeError):
     pass
@@ -31,7 +33,6 @@ class SecretCipher:
     ITERATIONS = 600_000
     OPENSSL_CIPHER = "aes-256-cbc"
     AUTHENTICATED_PREFIXES = {
-        1: b"gmail-header-exporter:v1:",
         2: b"imap-exporter:v2:",
     }
 
@@ -39,21 +40,25 @@ class SecretCipher:
         self.openssl = shutil.which("openssl")
         if not self.openssl:
             raise SecretError(
-                "O OpenSSL não foi encontrado. Ele faz parte da instalação "
-                "padrão do Ubuntu e é necessário para proteger as credenciais."
+                tr(
+                    "O OpenSSL não foi encontrado. Ele faz parte da instalação "
+                    "padrão do Ubuntu e é necessário para proteger as credenciais."
+                )
             )
 
     @staticmethod
     def validate_account_password(password: str) -> None:
         if len(password) < 8:
-            raise SecretError("A senha local da conta deve ter pelo menos 8 caracteres.")
+            raise SecretError(
+                tr("A senha local da conta deve ter pelo menos 8 caracteres.")
+            )
         if len(password) > 1024:
-            raise SecretError("A senha local da conta é longa demais.")
+            raise SecretError(tr("A senha local da conta é longa demais."))
 
     def encrypt(self, imap_password: str, account_password: str) -> str:
         self.validate_account_password(account_password)
         if not imap_password:
-            raise SecretError("A senha IMAP não pode ficar vazia.")
+            raise SecretError(tr("A senha IMAP não pode ficar vazia."))
         ciphertext = self._openssl(
             imap_password.encode("utf-8"), account_password, decrypt=False
         )
@@ -82,17 +87,25 @@ class SecretCipher:
             payload = json.loads(payload_text)
             version = int(payload["version"])
             if version not in self.AUTHENTICATED_PREFIXES:
-                raise SecretError("Versão de credencial criptografada não suportada.")
+                raise SecretError(
+                    tr("Versão de credencial criptografada não suportada.")
+                )
             iterations = int(payload["iterations"])
             if iterations != self.ITERATIONS:
-                raise SecretError("Parâmetros da credencial criptografada são inválidos.")
+                raise SecretError(
+                    tr("Parâmetros da credencial criptografada são inválidos.")
+                )
             if payload.get("cipher") != self.OPENSSL_CIPHER:
-                raise SecretError("Algoritmo da credencial criptografada não suportado.")
+                raise SecretError(
+                    tr("Algoritmo da credencial criptografada não suportado.")
+                )
             mac_salt = base64.b64decode(payload["mac_salt"], validate=True)
             ciphertext = base64.b64decode(payload["ciphertext"], validate=True)
             expected_tag = base64.b64decode(payload["tag"], validate=True)
         except (KeyError, ValueError, TypeError, json.JSONDecodeError) as exc:
-            raise SecretError("A credencial criptografada está danificada.") from exc
+            raise SecretError(
+                tr("A credencial criptografada está danificada.")
+            ) from exc
 
         mac_key = hashlib.pbkdf2_hmac(
             "sha256",
@@ -104,12 +117,14 @@ class SecretCipher:
         authenticated = self.AUTHENTICATED_PREFIXES[version] + ciphertext
         actual_tag = hmac.new(mac_key, authenticated, hashlib.sha256).digest()
         if not hmac.compare_digest(actual_tag, expected_tag):
-            raise InvalidAccountPassword("Senha local da conta incorreta.")
+            raise InvalidAccountPassword(tr("Senha local da conta incorreta."))
         plaintext = self._openssl(ciphertext, account_password, decrypt=True)
         try:
             return plaintext.decode("utf-8")
         except UnicodeDecodeError as exc:
-            raise SecretError("A credencial descriptografada é inválida.") from exc
+            raise SecretError(
+                tr("A credencial descriptografada é inválida.")
+            ) from exc
 
     def change_password(
         self, payload_text: str, old_password: str, new_password: str
@@ -151,8 +166,12 @@ class SecretCipher:
         if completed.returncode != 0:
             if decrypt:
                 raise InvalidAccountPassword(
-                    "Não foi possível abrir a credencial com essa senha local."
+                    tr("Não foi possível abrir a credencial com essa senha local.")
                 )
             detail = completed.stderr.decode("utf-8", errors="replace").strip()
-            raise SecretError(f"Falha ao proteger a credencial: {detail}")
+            raise SecretError(
+                tr("Falha ao proteger a credencial: {detail}").format(
+                    detail=detail
+                )
+            )
         return completed.stdout

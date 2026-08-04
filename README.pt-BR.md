@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Versão 0.4.12" src="https://img.shields.io/badge/vers%C3%A3o-0.4.12-3584e4">
+  <img alt="Versão 0.4.13" src="https://img.shields.io/badge/vers%C3%A3o-0.4.13-3584e4">
   <img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-26a269">
   <img alt="Python 3.10 ou superior" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -132,7 +132,7 @@ janela. Os bytes de um anexo só são gravados no local escolhido pelo usuário.
 
 `Outro servidor IMAP` aceita qualquer serviço compatível com autenticação por
 senha em IMAP sobre SSL/TLS. Outlook.com, Hotmail e outros serviços exclusivos
-de OAuth2 não foram incluídos porque a versão 0.4.12 ainda não implementa OAuth2.
+de OAuth2 não foram incluídos porque a versão 0.4.13 ainda não implementa OAuth2.
 O Proton Mail depende do aplicativo Bridge, e não de uma conexão IMAP direta
 comum.
 
@@ -146,7 +146,7 @@ senha na documentação atual do serviço.
 Em Debian, Ubuntu, Lubuntu, Linux Mint e derivados:
 
 ```bash
-sudo apt install ./imap-exporter_0.4.12_all.deb
+sudo apt install ./imap-exporter_0.4.13_all.deb
 ```
 
 Ao usar `apt install`, o sistema instala as dependências declaradas: Python 3,
@@ -160,14 +160,14 @@ O aplicativo não possui dependências de `pip`. Em uma instalação desktop pad
 do Ubuntu, extraia o código-fonte e execute:
 
 ```bash
-./executar.sh
+./run.sh
 ```
 
 Caso a permissão de execução não tenha sido preservada:
 
 ```bash
-chmod +x executar.sh
-./executar.sh
+chmod +x run.sh
+./run.sh
 ```
 
 ### Clonar o repositório
@@ -184,7 +184,7 @@ Depois clone e execute:
 ```bash
 git clone https://github.com/ehstbr/IMAP-Exporter.git
 cd IMAP-Exporter
-./executar.sh
+./run.sh
 ```
 
 A remoção administrativa de uma conta bloqueada depende do auxiliar privilegiado
@@ -196,12 +196,12 @@ testadas diretamente pela árvore de código-fonte.
 Novas instalações armazenam o banco SQLite em:
 
 ```text
-~/.local/share/imap-exporter/dados.sqlite3
+~/.local/share/imap-exporter/imap-exporter.sqlite3
 ```
 
-Se a pasta antiga `~/.local/share/gmail-header-exporter` já existir e a nova
-ainda não existir, ela continuará sendo usada automaticamente. Assim, a mudança
-do nome do aplicativo não perde contas, histórico nem preferências.
+A aplicação usa exclusivamente esse diretório e esse nome de banco. Caminhos,
+variáveis de ambiente, bancos, esquemas e formatos de credencial de versões
+anteriores não são migrados nem reutilizados automaticamente.
 
 ## Como funcionam a sincronização e a limpeza
 

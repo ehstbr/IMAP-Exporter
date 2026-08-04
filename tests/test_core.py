@@ -1133,7 +1133,7 @@ From: remetente@example.com
         ):
             with self.assertRaisesRegex(
                 RuntimeError,
-                "2 mensagens",
+                "2",
             ) as raised:
                 MailExtractor(None).move_to_trash(
                     {"provider": "gmail"},
@@ -1176,7 +1176,7 @@ From: remetente@example.com
         ):
             with self.assertRaisesRegex(
                 RuntimeError,
-                "mecanismo de Lixeira",
+                "MOVE, UIDPLUS",
             ):
                 MailExtractor(None).move_to_trash(
                     {},
@@ -1224,14 +1224,9 @@ class SecretCipherTest(unittest.TestCase):
         with self.assertRaises(InvalidAccountPassword):
             cipher.decrypt(encrypted, "senha-local-incorreta")
 
-    def test_credentials_created_by_version_one_remain_compatible(self) -> None:
-        cipher = SecretCipher()
-        with patch.object(SecretCipher, "VERSION", 1):
-            legacy = cipher.encrypt("senha-imap-antiga", "senha-local-segura")
-        self.assertEqual(
-            cipher.decrypt(legacy, "senha-local-segura"),
-            "senha-imap-antiga",
-        )
+    def test_only_the_current_credential_format_is_supported(self) -> None:
+        self.assertEqual(SecretCipher.VERSION, 2)
+        self.assertEqual(set(SecretCipher.AUTHENTICATED_PREFIXES), {2})
 
 
 class IdentityAndPresetTest(unittest.TestCase):
@@ -1266,26 +1261,56 @@ class IdentityAndPresetTest(unittest.TestCase):
         self.assertNotIn("hotmail", provider_text)
         self.assertNotIn("outlook", provider_text)
 
-    def test_locale_files_cover_every_static_app_translation(self) -> None:
+    def test_locale_files_cover_all_runtime_translation_keys(self) -> None:
         root = Path(__file__).parents[1]
-        source = (root / "app.py").read_text(encoding="utf-8")
         import ast
 
-        tree = ast.parse(source)
         required: set[str] = set()
-        for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Name)
-                and node.func.id == "_"
-                and node.args
-            ):
-                try:
-                    value = ast.literal_eval(node.args[0])
-                except (ValueError, TypeError):
-                    continue
-                if isinstance(value, str):
-                    required.add(value)
+        runtime_sources = [root / "app.py", *(root / "mail_exporter").glob("*.py")]
+        column_constants = {
+            "MESSAGE_COLUMNS",
+            "RECIPIENT_COLUMNS",
+            "DOMAIN_COLUMNS",
+            "SENDER_COLUMNS",
+            "ERROR_COLUMNS",
+            "ATTACHMENT_COLUMNS",
+        }
+        for source_path in runtime_sources:
+            tree = ast.parse(source_path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id in {"_", "tr"}
+                    and node.args
+                ):
+                    try:
+                        value = ast.literal_eval(node.args[0])
+                    except (ValueError, TypeError):
+                        continue
+                    if isinstance(value, str):
+                        required.add(value)
+                if isinstance(node, (ast.Assign, ast.AnnAssign)):
+                    targets = (
+                        node.targets
+                        if isinstance(node, ast.Assign)
+                        else [node.target]
+                    )
+                    names = {
+                        target.id
+                        for target in targets
+                        if isinstance(target, ast.Name)
+                    }
+                    if not names & column_constants:
+                        continue
+                    columns = ast.literal_eval(node.value)
+                    required.update(label for _key, label in columns)
+        providers = json.loads(
+            (root / "providers.json").read_text(encoding="utf-8")
+        )
+        for provider in providers:
+            required.add(provider["name"])
+            required.add(provider["password_hint"])
         for language in ("pt_BR", "en"):
             messages = json.loads(
                 (root / "locales" / f"{language}.json").read_text(
@@ -1293,6 +1318,47 @@ class IdentityAndPresetTest(unittest.TestCase):
                 )
             )
             self.assertFalse(required - messages.keys())
+
+    def test_english_runtime_messages_and_exports_do_not_leak_portuguese(self) -> None:
+        previous = get_language()
+        try:
+            set_language("en", persist=False)
+            self.assertEqual(
+                tr("O servidor não retornou a lista de pastas."),
+                "The server did not return the folder list.",
+            )
+            self.assertEqual(
+                tr("Falha ao proteger a credencial: {detail}").format(
+                    detail="test"
+                ),
+                "Failed to protect the credential: test",
+            )
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                database = Database(root / "test.sqlite3")
+                account_id = database.save_account(
+                    {
+                        "display_name": "Test account",
+                        "email": "test@example.com",
+                        "provider": "custom",
+                        "host": "imap.example.com",
+                        "port": 993,
+                        "security": "ssl",
+                        "auth_type": "password",
+                    }
+                )
+                destination = root / "english.csv"
+                export_csv(database, [account_id], destination)
+                with destination.open(
+                    encoding="utf-8-sig", newline=""
+                ) as stream:
+                    header = next(csv.reader(stream, delimiter=";"))
+            self.assertIn("Account", header)
+            self.assertIn("Subject", header)
+            self.assertNotIn("Conta", header)
+            self.assertNotIn("Assunto", header)
+        finally:
+            set_language(previous, persist=False)
 
     def test_language_can_be_changed_without_persisting(self) -> None:
         previous = get_language()
@@ -1304,7 +1370,7 @@ class IdentityAndPresetTest(unittest.TestCase):
         finally:
             set_language(previous, persist=False)
 
-    def test_legacy_data_directory_is_reused(self) -> None:
+    def test_legacy_data_directory_is_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             legacy = Path(temporary) / "gmail-header-exporter"
             legacy.mkdir()
@@ -1317,11 +1383,17 @@ class IdentityAndPresetTest(unittest.TestCase):
                 {"IMAP_EXPORTER_DATA_DIR": ""},
                 clear=False,
             ):
-                self.assertEqual(data_dir(), legacy)
+                self.assertEqual(
+                    data_dir(),
+                    Path(temporary) / "imap-exporter",
+                )
+                self.assertTrue(legacy.exists())
 
 
 class DatabaseAndExportTest(unittest.TestCase):
     def setUp(self) -> None:
+        self.previous_language = get_language()
+        set_language("pt_BR", persist=False)
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.database = Database(self.root / "test.sqlite3")
@@ -1366,6 +1438,7 @@ class DatabaseAndExportTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+        set_language(self.previous_language, persist=False)
 
     def test_database_summary(self) -> None:
         summary = self.database.account_summary(self.account_id)
@@ -1421,7 +1494,7 @@ class DatabaseAndExportTest(unittest.TestCase):
         self.assertIn("Nomes dos anexos", exported[0])
         self.assertIn("manual.pdf", exported[1])
 
-    def test_existing_033_database_is_migrated_before_state_index(self) -> None:
+    def test_legacy_database_schema_is_not_migrated(self) -> None:
         legacy_path = self.root / "legacy-033.sqlite3"
         connection = sqlite3.connect(legacy_path)
         connection.executescript(
@@ -1449,24 +1522,14 @@ class DatabaseAndExportTest(unittest.TestCase):
         )
         connection.close()
 
-        migrated = Database(legacy_path)
-        with migrated.connect() as current:
+        Database(legacy_path)
+
+        with sqlite3.connect(legacy_path) as current:
             message_columns = {
-                row["name"]
+                row[1]
                 for row in current.execute("PRAGMA table_info(messages)")
             }
-            mapping_columns = {
-                row["name"]
-                for row in current.execute(
-                    "PRAGMA table_info(message_mailboxes)"
-                )
-            }
-        self.assertTrue(
-            {"state", "last_seen_at", "missing_since"} <= message_columns
-        )
-        self.assertTrue(
-            {"last_seen_at", "missing_since"} <= mapping_columns
-        )
+        self.assertNotIn("state", message_columns)
 
     def test_subject_messages_filter_search_and_paginate_metadata(self) -> None:
         sender_rows = self.database.subject_messages(
@@ -1877,7 +1940,7 @@ class DatabaseAndExportTest(unittest.TestCase):
             int(source_mailbox["id"]),
         )
 
-    def test_startup_repairs_legacy_active_message_without_uid(self) -> None:
+    def test_startup_does_not_repair_previous_database_states(self) -> None:
         with self.database.connect() as connection:
             connection.execute(
                 "DELETE FROM message_mailboxes WHERE message_id_fk IN "
@@ -1890,16 +1953,15 @@ class DatabaseAndExportTest(unittest.TestCase):
                 (self.account_id,),
             )
 
-        repaired = Database(self.database.path)
-        with repaired.connect() as connection:
+        reopened = Database(self.database.path)
+        with reopened.connect() as connection:
             message = connection.execute(
                 "SELECT state, missing_since FROM messages "
                 "WHERE account_id=?",
                 (self.account_id,),
             ).fetchone()
-        self.assertEqual(message["state"], "missing")
-        self.assertIsNotNone(message["missing_since"])
-        self.assertEqual(repaired.sender_summary(self.account_id), [])
+        self.assertEqual(message["state"], "active")
+        self.assertIsNone(message["missing_since"])
 
     def test_action_reconciliation_uses_only_sources_and_trash(self) -> None:
         mailboxes = self.database.replace_mailboxes(
@@ -2848,7 +2910,7 @@ class WindowLayoutTest(unittest.TestCase):
     def test_about_window_has_expected_tabs_and_project_identity(self) -> None:
         source = self._app_source()
         self.assertIn('APP_NAME = "IMAP Exporter"', source)
-        self.assertIn('APP_VERSION = "0.4.12"', source)
+        self.assertIn('APP_VERSION = "0.4.13"', source)
         self.assertIn("def _show_about_dialog(", source)
         about = source.split(
             "def _show_about_dialog(",

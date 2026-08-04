@@ -15,7 +15,7 @@ cleanup() {
 trap cleanup EXIT HUP INT TERM
 
 if [ -z "$VERSION" ]; then
-    echo "Não foi possível identificar a versão em app.py." >&2
+    echo "Could not determine the version from app.py." >&2
     exit 1
 fi
 
