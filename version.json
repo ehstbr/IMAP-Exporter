@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "version": "0.5.0",
+  "mandatory": false,
+  "released_at": "2026-08-09T16:20:23Z",
+  "summary": "This release adds safe GitHub-based update checks while preserving the existing GTK 4 interface and Linux package workflow.",
+  "changelog": [
+    "Added one automatic update check per application startup.",
+    "Added manual update checking to the About window.",
+    "Added distinct optional and mandatory update policies.",
+    "Added a compact update window with summary and expandable full changelog.",
+    "Kept startup fail-open when GitHub, the network, or the manifest is unavailable.",
+    "Added strict schema validation, semantic version comparison, HTTPS-only requests, size limits, and a short timeout.",
+    "Kept package installation under user and distribution control; the application never runs sudo, apt, or dpkg.",
+    "Centralized the application version in mail_exporter/__init__.py.",
+    "Added maintainer documentation and automated update-check tests."
+  ]
+}

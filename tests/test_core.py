@@ -2910,7 +2910,7 @@ class WindowLayoutTest(unittest.TestCase):
     def test_about_window_has_expected_tabs_and_project_identity(self) -> None:
         source = self._app_source()
         self.assertIn('APP_NAME = "IMAP Exporter"', source)
-        self.assertIn('APP_VERSION = "0.4.13"', source)
+        self.assertIn("APP_VERSION = __version__", source)
         self.assertIn("def _show_about_dialog(", source)
         about = source.split(
             "def _show_about_dialog(",
@@ -2940,7 +2940,11 @@ class WindowLayoutTest(unittest.TestCase):
             "components",
         ):
             self.assertIn(f'"{page}"', source)
-        self.assertIn("https://github.com/ehstbr/IMAP-Exporter", source)
+        update_source = (
+            Path(__file__).parents[1] / "mail_exporter" / "update.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("https://github.com/ehstbr/IMAP-Exporter", update_source)
+        self.assertIn("PROJECT_URL", source)
         self.assertIn("contato@eduhcommerce.com.br", source)
         self.assertIn("MIT_LICENSE_FALLBACK", source)
         self.assertIn('self._read_packaged_document(', source)

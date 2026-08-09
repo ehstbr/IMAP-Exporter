@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import logging
 import os
 import re
 import shutil
@@ -8,11 +9,21 @@ import subprocess
 import sys
 import tempfile
 import threading
+import weakref
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
+from mail_exporter import __version__
 from mail_exporter.i18n import get_language, set_language, tr as _
+from mail_exporter.update import (
+    CheckSource,
+    LATEST_RELEASE_URL,
+    PROJECT_URL,
+    UpdateCheckResult,
+    UpdateService,
+    UpdateStatus,
+)
 
 try:
     import gi
@@ -44,8 +55,7 @@ from mail_exporter.secrets import InvalidAccountPassword, SecretCipher, SecretEr
 
 APP_ID = "io.github.ehstbr.imapexporter"
 APP_NAME = "IMAP Exporter"
-APP_VERSION = "0.4.13"
-PROJECT_URL = "https://github.com/ehstbr/IMAP-Exporter"
+APP_VERSION = __version__
 MIT_LICENSE_FALLBACK = """MIT License
 
 Copyright (c) 2026 Eduardo Henrique Silva Teixeira
@@ -252,6 +262,250 @@ class AppDialog(Gtk.Window):
         return True
 
 
+class UpdateWindow(Gtk.Window):
+    """Application-owned update notice with distinct optional/required policy."""
+
+    def __init__(
+        self,
+        *,
+        application: Gtk.Application,
+        transient_for: Gtk.Window | None,
+        result: UpdateCheckResult,
+        on_close: Callable[[Gtk.Window], None],
+        on_quit: Callable[[], None],
+    ) -> None:
+        manifest = result.manifest
+        if manifest is None:
+            raise ValueError("An update window requires a validated manifest.")
+        mandatory = result.status == UpdateStatus.MANDATORY_UPDATE_REQUIRED
+        title = _("Atualização necessária") if mandatory else _("Atualização disponível")
+        super().__init__(title=title, application=application)
+        if transient_for is not None and transient_for.get_visible():
+            self.set_transient_for(transient_for)
+        self.set_destroy_with_parent(False)
+        self.set_modal(mandatory)
+        self.set_default_size(620, -1)
+        self.set_size_request(480, -1)
+        self._mandatory = mandatory
+        self.remote_version = result.remote_version
+        self._on_close = on_close
+        self._on_quit = on_quit
+        self._closing = False
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.set_child(root)
+        header = Gtk.HeaderBar()
+        self.set_titlebar(header)
+
+        content_scroller = Gtk.ScrolledWindow()
+        content_scroller.set_policy(
+            Gtk.PolicyType.NEVER,
+            Gtk.PolicyType.AUTOMATIC,
+        )
+        content_scroller.set_propagate_natural_height(True)
+        content_scroller.set_max_content_height(620)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        set_margins(content, 22)
+        content_scroller.set_child(content)
+        root.append(content_scroller)
+
+        icon = Gtk.Image.new_from_icon_name(APP_ID)
+        icon.set_pixel_size(72)
+        icon.set_halign(Gtk.Align.CENTER)
+        content.append(icon)
+
+        heading = Gtk.Label(label=title, wrap=True)
+        heading.set_justify(Gtk.Justification.CENTER)
+        heading.add_css_class("title-1")
+        content.append(heading)
+
+        policy_text = (
+            _(
+                "Esta versão precisa ser atualizada antes que o aplicativo "
+                "possa continuar sendo usado."
+            )
+            if mandatory
+            else _(
+                "Uma nova versão está disponível. Você pode obtê-la agora ou "
+                "continuar usando esta versão nesta sessão."
+            )
+        )
+        policy = Gtk.Label(
+            label=policy_text,
+            wrap=True,
+            justify=Gtk.Justification.CENTER,
+        )
+        policy.set_max_width_chars(68)
+        policy.add_css_class("dim-label")
+        content.append(policy)
+
+        versions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=18,
+        )
+        versions.set_halign(Gtk.Align.CENTER)
+        installed = Gtk.Label(
+            label=f"{_('Versão instalada')}: {result.current_version}"
+        )
+        available = Gtk.Label(
+            label=f"{_('Nova versão')}: {manifest.version}"
+        )
+        installed.add_css_class("heading")
+        available.add_css_class("heading")
+        versions.append(installed)
+        versions.append(available)
+        content.append(versions)
+
+        local_date = manifest.released_at.astimezone()
+        date_text = (
+            local_date.strftime("%d/%m/%Y")
+            if get_language() == "pt_BR"
+            else local_date.strftime("%Y-%m-%d")
+        )
+        released = Gtk.Label(label=f"{_('Publicada em')}: {date_text}")
+        released.set_halign(Gtk.Align.CENTER)
+        released.add_css_class("dim-label")
+        content.append(released)
+
+        summary_heading = Gtk.Label(label=_("Resumo"), xalign=0)
+        summary_heading.add_css_class("title-3")
+        content.append(summary_heading)
+        summary = Gtk.Label(label=manifest.summary, wrap=True, xalign=0)
+        summary.set_selectable(True)
+        summary.set_use_markup(False)
+        content.append(summary)
+
+        changelog_revealer = Gtk.Revealer()
+        changelog_revealer.set_transition_type(
+            Gtk.RevealerTransitionType.SLIDE_DOWN
+        )
+        changelog_revealer.set_transition_duration(180)
+        changelog_revealer.set_reveal_child(False)
+        changelog_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=8,
+        )
+        changelog_scroller = Gtk.ScrolledWindow()
+        changelog_scroller.set_policy(
+            Gtk.PolicyType.NEVER,
+            Gtk.PolicyType.AUTOMATIC,
+        )
+        changelog_scroller.set_min_content_height(120)
+        changelog_scroller.set_max_content_height(260)
+        changelog_scroller.set_propagate_natural_height(True)
+        changelog_list = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=8,
+        )
+        set_margins(changelog_list, 12)
+        for item in manifest.changelog:
+            row = Gtk.Label(label=f"• {item}", wrap=True, xalign=0)
+            row.set_selectable(True)
+            row.set_use_markup(False)
+            changelog_list.append(row)
+        if not manifest.changelog:
+            empty = Gtk.Label(
+                label=_("Nenhuma alteração adicional foi informada."),
+                wrap=True,
+                xalign=0,
+            )
+            empty.add_css_class("dim-label")
+            changelog_list.append(empty)
+        changelog_scroller.set_child(changelog_list)
+        changelog_box.append(rounded_scroll_frame(changelog_scroller))
+        changelog_revealer.set_child(changelog_box)
+
+        details_button = Gtk.Button(label=_("Ver todas as alterações"))
+        details_button.set_halign(Gtk.Align.START)
+        details_button.add_css_class("flat")
+        details_button.set_tooltip_text(_("Exibir o changelog completo"))
+
+        def toggle_details(_button: Gtk.Button) -> None:
+            expanded = not changelog_revealer.get_reveal_child()
+            changelog_revealer.set_reveal_child(expanded)
+            details_button.set_label(
+                _("Ocultar alterações")
+                if expanded
+                else _("Ver todas as alterações")
+            )
+
+        details_button.connect("clicked", toggle_details)
+        content.append(details_button)
+        content.append(changelog_revealer)
+
+        self.exit_status = Gtk.Label(wrap=True, xalign=0)
+        self.exit_status.add_css_class("dim-label")
+        self.exit_status.set_visible(False)
+        content.append(self.exit_status)
+
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        root.append(separator)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        footer.set_halign(Gtk.Align.END)
+        set_margins(footer, 16)
+        root.append(footer)
+
+        release_button = Gtk.LinkButton.new_with_label(
+            LATEST_RELEASE_URL,
+            _("Obter atualização"),
+        )
+        release_button.set_tooltip_text(LATEST_RELEASE_URL)
+        release_button.add_css_class("suggested-action")
+        if mandatory:
+            self.secondary_button = Gtk.Button(label=_("Sair"))
+            self.secondary_button.connect("clicked", lambda _button: on_quit())
+        else:
+            self.secondary_button = Gtk.Button(
+                label=_("Continuar usando esta versão")
+            )
+            self.secondary_button.connect("clicked", lambda _button: self.close())
+        footer.append(self.secondary_button)
+        footer.append(release_button)
+        self.set_default_widget(release_button)
+
+        key_controller = Gtk.EventControllerKey()
+        key_controller.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_controller)
+        self.connect("close-request", self._on_close_request)
+        self.connect("destroy", on_close)
+
+    def _on_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        _state: Gdk.ModifierType,
+    ) -> bool:
+        if keyval != Gdk.KEY_Escape:
+            return False
+        if self._mandatory:
+            self._on_quit()
+        else:
+            self.close()
+        return True
+
+    def _on_close_request(self, _window: Gtk.Window) -> bool:
+        if self._closing:
+            return False
+        if self._mandatory:
+            self._on_quit()
+            return True
+        self._closing = True
+        self.destroy()
+        return True
+
+    def set_waiting_for_safe_exit(self) -> None:
+        self.exit_status.set_text(
+            _(
+                "A operação atual será concluída com segurança antes de o "
+                "aplicativo encerrar. Nenhuma nova operação será iniciada."
+            )
+        )
+        self.exit_status.set_visible(True)
+        self.secondary_button.set_label(_("Concluindo operação…"))
+        self.secondary_button.set_sensitive(False)
+
+
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, application: Gtk.Application):
         super().__init__(application=application)
@@ -314,6 +568,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.attachment_analysis_cancel_event = threading.Event()
         self.attachment_analysis_pause_event = threading.Event()
         self.attachment_analysis_running = False
+        self.export_operation_active = False
+        self.runtime_allowed = False
 
         self._build_window()
         self.refresh_accounts()
@@ -352,12 +608,41 @@ class MainWindow(Gtk.ApplicationWindow):
         self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.set_transition_duration(180)
         self.stack.set_vexpand(True)
-        root.append(self.stack)
+
+        self.runtime_overlay = Gtk.Overlay()
+        self.runtime_overlay.set_child(self.stack)
+        self.runtime_overlay.set_vexpand(True)
+        runtime_card = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=10,
+        )
+        runtime_card.set_halign(Gtk.Align.CENTER)
+        runtime_card.set_valign(Gtk.Align.CENTER)
+        runtime_card.add_css_class("folder-loading-card")
+        self.runtime_spinner = Gtk.Spinner()
+        self.runtime_spinner.set_halign(Gtk.Align.CENTER)
+        runtime_card.append(self.runtime_spinner)
+        self.runtime_status = Gtk.Label(
+            label=_("Verificando atualizações…"),
+            wrap=True,
+            justify=Gtk.Justification.CENTER,
+        )
+        runtime_card.append(self.runtime_status)
+        self.runtime_revealer = Gtk.Revealer()
+        self.runtime_revealer.set_transition_type(
+            Gtk.RevealerTransitionType.CROSSFADE
+        )
+        self.runtime_revealer.set_transition_duration(160)
+        self.runtime_revealer.set_child(runtime_card)
+        self.runtime_revealer.set_reveal_child(True)
+        self.runtime_overlay.add_overlay(self.runtime_revealer)
+        root.append(self.runtime_overlay)
 
         self._build_accounts_page()
         self._build_folders_page()
         self._build_progress_page()
         self._build_results_page()
+        self.set_runtime_allowed(False)
 
     def _build_main_menu(self, header: Gtk.HeaderBar) -> None:
         about_action = Gio.SimpleAction.new("about", None)
@@ -424,6 +709,61 @@ class MainWindow(Gtk.ApplicationWindow):
                 "aplicativo for aberto."
             ),
         )
+
+    def set_runtime_allowed(
+        self,
+        allowed: bool,
+        *,
+        mandatory: bool = False,
+    ) -> None:
+        self.runtime_allowed = allowed
+        if allowed:
+            self.runtime_spinner.stop()
+            self.runtime_revealer.set_reveal_child(False)
+            self.stack.set_sensitive(True)
+            self.add_button.set_sensitive(True)
+            self.back_button.set_sensitive(True)
+            self._show_page(self.stack.get_visible_child_name() or "accounts")
+            return
+
+        self.runtime_status.set_text(
+            _("Atualização necessária")
+            if mandatory
+            else _("Verificando atualizações…")
+        )
+        if mandatory:
+            self.runtime_spinner.stop()
+        else:
+            self.runtime_spinner.start()
+        self.runtime_revealer.set_reveal_child(True)
+        self.add_button.set_sensitive(False)
+        self.back_button.set_sensitive(False)
+        self.rebuild_index_action.set_enabled(False)
+        self.stack.set_sensitive(False)
+
+    def has_critical_operation(self) -> bool:
+        return bool(
+            (self.current_thread is not None and self.current_thread.is_alive())
+            or self.cleanup_operation_active
+            or self.attachment_analysis_running
+            or self.export_operation_active
+        )
+
+    def prepare_for_mandatory_update(self) -> bool:
+        """Block new work and let any current operation reach a safe boundary."""
+        self.runtime_allowed = False
+        self.add_button.set_sensitive(False)
+        self.back_button.set_sensitive(False)
+        self.rebuild_index_action.set_enabled(False)
+        if self.is_paused:
+            self.is_paused = False
+            self.pause_event.clear()
+        if self.cleanup_is_paused:
+            self.cleanup_is_paused = False
+            self.cleanup_pause_event.clear()
+        self.attachment_analysis_pause_event.clear()
+        self.set_runtime_allowed(False, mandatory=True)
+        return self.has_critical_operation()
 
     def _about_text_page(self, text: str) -> Gtk.Frame:
         label = Gtk.Label(
@@ -497,6 +837,33 @@ class MainWindow(Gtk.ApplicationWindow):
         version = Gtk.Label(label=f"{_('Versão')} {APP_VERSION}")
         version.add_css_class("dim-label")
         information.append(version)
+        update_controls = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=6,
+        )
+        update_controls.set_halign(Gtk.Align.CENTER)
+        check_update_button = Gtk.Button(label=_("Verificar atualizações"))
+        check_update_button.set_tooltip_text(
+            _("Consultar a versão mais recente no GitHub")
+        )
+        update_status = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER)
+        update_status.set_max_width_chars(58)
+        update_status.add_css_class("dim-label")
+        update_status.set_visible(False)
+        update_controls.append(check_update_button)
+        update_controls.append(update_status)
+        information.append(update_controls)
+
+        def check_updates(_button: Gtk.Button) -> None:
+            application = self.get_application()
+            if isinstance(application, HeaderExporterApplication):
+                application.request_manual_update_check(
+                    dialog,
+                    check_update_button,
+                    update_status,
+                )
+
+        check_update_button.connect("clicked", check_updates)
         description = Gtk.Label(
             label=_(
                 "Aplicativo desktop para coletar, analisar e exportar "
@@ -608,6 +975,12 @@ class MainWindow(Gtk.ApplicationWindow):
             "Quem modificar o código pode alterar esse comportamento; "
             "verifique a procedência de versões obtidas fora do repositório "
             "oficial."
+        )
+        privacy += "\n\n" + _(
+            "O verificador consulta automaticamente, uma vez por abertura, "
+            "o arquivo version.json do repositório oficial no GitHub. A "
+            "requisição não envia telemetria, identificadores, dados da conta "
+            "ou metadados das mensagens."
         )
         pages.add_titled(
             self._about_text_page(privacy),
@@ -6648,6 +7021,7 @@ class MainWindow(Gtk.ApplicationWindow):
             if selection_only
             else _("Gerando a exportação completa…")
         )
+        self.export_operation_active = True
 
         def work() -> None:
             try:
@@ -6687,6 +7061,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 GLib.idle_add(failure, str(exc))
 
         def success(path: str) -> bool:
+            self.export_operation_active = False
             self._refresh_results_summary()
             self._update_cleanup_preview()
             self.export_status.set_text(
@@ -6695,6 +7070,7 @@ class MainWindow(Gtk.ApplicationWindow):
             return False
 
         def failure(detail: str) -> bool:
+            self.export_operation_active = False
             self._refresh_results_summary()
             self._update_cleanup_preview()
             self.export_status.set_text(_("A exportação falhou."))
@@ -7080,6 +7456,13 @@ class HeaderExporterApplication(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID)
         self.css_provider: Gtk.CssProvider | None = None
+        self.update_service = UpdateService(current_version=APP_VERSION)
+        self._main_window: MainWindow | None = None
+        self._update_window: UpdateWindow | None = None
+        self._startup_check_started = False
+        self._mandatory_result: UpdateCheckResult | None = None
+        self._shutting_down = False
+        self._safe_exit_pending = False
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -7111,7 +7494,7 @@ class HeaderExporterApplication(Gtk.Application):
         self.css_provider = provider
 
     def do_activate(self) -> None:
-        window = self.props.active_window
+        window = self._main_window
         if window is None:
             try:
                 window = MainWindow(self)
@@ -7119,10 +7502,230 @@ class HeaderExporterApplication(Gtk.Application):
                 print(str(exc), file=sys.stderr)
                 self.quit()
                 return
+            self._main_window = window
         window.present()
+        if self._update_window is not None:
+            self._update_window.present()
+        if self._mandatory_result is not None:
+            self._present_update_window(self._mandatory_result, window)
+            return
+        if not self._startup_check_started:
+            self._startup_check_started = True
+            window.set_runtime_allowed(False)
+            GLib.idle_add(self._start_startup_update_check)
+
+    def _start_startup_update_check(self) -> bool:
+        if self._shutting_down:
+            return False
+
+        def completed(result: UpdateCheckResult) -> None:
+            GLib.idle_add(self._handle_startup_update_result, result)
+
+        self.update_service.check_async(CheckSource.STARTUP, completed)
+        return False
+
+    def request_manual_update_check(
+        self,
+        parent: Gtk.Window,
+        button: Gtk.Button,
+        status_label: Gtk.Label,
+    ) -> None:
+        if self._shutting_down:
+            return
+        button.set_sensitive(False)
+        button.set_label(_("Verificando…"))
+        status_label.set_text(_("Consultando a versão mais recente…"))
+        status_label.set_visible(True)
+        parent_ref = weakref.ref(parent)
+        button_ref = weakref.ref(button)
+        status_ref = weakref.ref(status_label)
+
+        def completed(result: UpdateCheckResult) -> None:
+            GLib.idle_add(
+                self._handle_manual_update_result,
+                result,
+                parent_ref,
+                button_ref,
+                status_ref,
+            )
+
+        started = self.update_service.check_async(CheckSource.MANUAL, completed)
+        if not started:
+            status_label.set_text(_("Verificação já em andamento…"))
+
+    def _handle_startup_update_result(
+        self,
+        result: UpdateCheckResult,
+    ) -> bool:
+        if self._shutting_down:
+            return False
+        window = self._main_window
+        if window is None:
+            return False
+        if result.status == UpdateStatus.MANDATORY_UPDATE_REQUIRED:
+            self._enter_mandatory_update_state(result)
+            return False
+
+        window.set_runtime_allowed(True)
+        if result.status == UpdateStatus.OPTIONAL_UPDATE_AVAILABLE:
+            self._present_update_window(result, window)
+        return False
+
+    def _handle_manual_update_result(
+        self,
+        result: UpdateCheckResult,
+        parent_ref: weakref.ReferenceType[Gtk.Window],
+        button_ref: weakref.ReferenceType[Gtk.Button],
+        status_ref: weakref.ReferenceType[Gtk.Label],
+    ) -> bool:
+        if self._shutting_down:
+            return False
+        parent = parent_ref()
+        button = button_ref()
+        status_label = status_ref()
+        if button is not None:
+            button.set_label(_("Verificar atualizações"))
+            button.set_sensitive(True)
+
+        if result.status == UpdateStatus.CHECK_FAILED:
+            if status_label is not None:
+                status_label.set_text(
+                    _(
+                        "Não foi possível verificar atualizações. Verifique "
+                        "sua conexão e tente novamente."
+                    )
+                )
+            return False
+        if result.status == UpdateStatus.UP_TO_DATE:
+            if status_label is not None:
+                status_label.set_text(
+                    _("Você está usando a versão mais recente ({version}).").format(
+                        version=result.current_version
+                    )
+                )
+            return False
+        if result.status == UpdateStatus.LOCAL_VERSION_NEWER:
+            if status_label is not None:
+                status_label.set_text(
+                    _(
+                        "Esta instalação é mais recente que a versão publicada "
+                        "atualmente."
+                    )
+                )
+            return False
+
+        if parent is not None and parent.get_visible():
+            parent.destroy()
+        if result.status == UpdateStatus.MANDATORY_UPDATE_REQUIRED:
+            self._enter_mandatory_update_state(result)
+        else:
+            self._present_update_window(result, self._main_window)
+        return False
+
+    def _enter_mandatory_update_state(
+        self,
+        result: UpdateCheckResult,
+    ) -> None:
+        self._mandatory_result = result
+        window = self._main_window
+        operation_active = False
+        if window is not None:
+            operation_active = window.prepare_for_mandatory_update()
+        self._present_update_window(result, window)
+        if operation_active:
+            GLib.timeout_add(250, self._lock_runtime_when_safe)
+
+    def _lock_runtime_when_safe(self) -> bool:
+        if self._shutting_down:
+            return False
+        window = self._main_window
+        if window is None:
+            return False
+        if window.has_critical_operation():
+            return True
+        window.set_runtime_allowed(False, mandatory=True)
+        return False
+
+    def _present_update_window(
+        self,
+        result: UpdateCheckResult,
+        parent: Gtk.Window | None,
+    ) -> None:
+        if self._shutting_down or result.manifest is None:
+            return
+        mandatory = result.status == UpdateStatus.MANDATORY_UPDATE_REQUIRED
+        existing = self._update_window
+        if existing is not None:
+            same_release = existing.remote_version == result.remote_version
+            if same_release and existing._mandatory == mandatory:
+                existing.present()
+                logging.getLogger("imap_exporter.update").info(
+                    "Existing update window presented version=%s mandatory=%s",
+                    result.remote_version,
+                    mandatory,
+                )
+                return
+            existing.destroy()
+
+        candidate_parent = parent or self._main_window
+        visible_parent = (
+            candidate_parent
+            if candidate_parent is not None and candidate_parent.get_visible()
+            else None
+        )
+        update_window = UpdateWindow(
+            application=self,
+            transient_for=visible_parent,
+            result=result,
+            on_close=self._update_window_closed,
+            on_quit=self._request_quit_for_update,
+        )
+        self._update_window = update_window
+        update_window.present()
+        logging.getLogger("imap_exporter.update").info(
+            "Update window presented version=%s mandatory=%s",
+            result.remote_version,
+            mandatory,
+        )
+
+    def _update_window_closed(self, window: Gtk.Window) -> None:
+        if self._update_window is window:
+            self._update_window = None
+
+    def _request_quit_for_update(self) -> None:
+        if self._shutting_down or self._safe_exit_pending:
+            return
+        window = self._main_window
+        if window is not None:
+            window.prepare_for_mandatory_update()
+        if window is not None and window.has_critical_operation():
+            self._safe_exit_pending = True
+            if self._update_window is not None:
+                self._update_window.set_waiting_for_safe_exit()
+            GLib.timeout_add(250, self._quit_when_runtime_is_safe)
+            return
+        self.quit()
+
+    def _quit_when_runtime_is_safe(self) -> bool:
+        if self._shutting_down:
+            return False
+        window = self._main_window
+        if window is not None and window.has_critical_operation():
+            return True
+        self.quit()
+        return False
+
+    def do_shutdown(self) -> None:
+        self._shutting_down = True
+        self.update_service.shutdown()
+        Gtk.Application.do_shutdown(self)
 
 
 def main() -> int:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
     application = HeaderExporterApplication()
     return application.run(sys.argv)
 

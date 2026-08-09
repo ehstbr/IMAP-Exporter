@@ -3,6 +3,37 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.5.0] - 2026-08-09
+
+### Atualizações
+
+- Adicionada uma verificação automática por abertura baseada no arquivo
+  `version.json` do repositório oficial no GitHub.
+- A janela Sobre ganhou a ação manual `Verificar atualizações`, com retorno
+  visível para versão atual, falha de rede e instalação mais nova que a release.
+- Atualizações opcionais são apresentadas em janela não modal e permitem
+  continuar usando a versão instalada durante a sessão.
+- Atualizações obrigatórias bloqueiam novas operações pelo estado do aplicativo,
+  preservam a conclusão segura de tarefas críticas já iniciadas e não podem ser
+  ignoradas pelo botão de fechar ou pela tecla Escape.
+- Resumo da versão permanece visível e o changelog completo começa recolhido,
+  pode ser expandido e usa rolagem para listas longas.
+- Startup e verificação manual compartilham o mesmo serviço, coalescendo cliques
+  simultâneos e impedindo janelas duplicadas para a mesma release.
+- Falhas de rede, timeout, HTTP, JSON, schema ou versão usam política fail-open
+  no startup e nunca tornam o GitHub um requisito para abrir o aplicativo.
+- Adicionadas validação rígida do manifesto, comparação SemVer, limite de
+  resposta, redirects somente por HTTPS e User-Agent sem dados pessoais.
+- O verificador somente abre a release oficial; não baixa pacotes nem executa
+  `sudo`, `apt`, `dpkg` ou instalação silenciosa.
+
+### Projeto e distribuição
+
+- Versão canônica centralizada em `mail_exporter/__init__.py` e reutilizada pela
+  interface, pelo verificador e pelo gerador do pacote Debian.
+- Adicionados `version.json`, documentação bilíngue para mantenedores e testes
+  automatizados do contrato, das políticas e do lifecycle do updater.
+
 ## [0.4.13] - 2026-08-03
 
 ### Compatibilidade e internacionalização
@@ -105,6 +136,7 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.5.0]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.0
 [0.4.13]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.13
 [0.4.12]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.12
 [0.4.11]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.11

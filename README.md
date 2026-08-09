@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.4.13" src="https://img.shields.io/badge/version-0.4.13-3584e4">
+  <img alt="Version 0.5.0" src="https://img.shields.io/badge/version-0.5.0-3584e4">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-26a269">
   <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -54,6 +54,9 @@ download them.
   the IMAP server provides identifiers that make restoration safe.
 - Portuguese and English interface, symbolic icons, and GTK 4 styling tested for
   GNOME, LXQt/Lubuntu, and other Linux desktop environments.
+- Safe GitHub-based update checks at startup and from the About window, with an
+  optional non-blocking notice, mandatory-update policy, release summary, and
+  expandable complete changelog.
 
 ## Screenshots
 
@@ -113,6 +116,11 @@ Normal synchronization does not fetch message bodies or attachment bytes. The
 reader requests only the selected message and keeps its content in the window's
 memory. Attachment bytes are written only to a location chosen by the user.
 
+Once per startup, the updater requests only the public `version.json` file from
+the official GitHub repository. It sends no telemetry, installation identifier,
+account data, or message metadata. Network or GitHub failures never prevent
+normal startup.
+
 ## Preconfigured providers
 
 | Provider | IMAP server | Port | Notes |
@@ -129,7 +137,7 @@ memory. Attachment bytes are written only to a location chosen by the user.
 
 `Other IMAP server` accepts any service compatible with password authentication
 over IMAP SSL/TLS. Outlook.com, Hotmail, and other OAuth2-only services are not
-included because version 0.4.13 does not implement OAuth2. Proton Mail requires
+included because version 0.5.0 does not implement OAuth2. Proton Mail requires
 its Bridge application rather than a regular direct IMAP connection.
 
 Provider requirements may change. Confirm IMAP access and password requirements
@@ -142,7 +150,7 @@ in the provider's current documentation.
 On Debian, Ubuntu, Lubuntu, Linux Mint, and derivatives:
 
 ```bash
-sudo apt install ./imap-exporter_0.4.13_all.deb
+sudo apt install ./imap-exporter_0.5.0_all.deb
 ```
 
 Using `apt install` allows the system to install the declared dependencies:
@@ -252,6 +260,7 @@ GitHub Actions runs the same suite on every push and pull request.
 - [Contributing guide](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Terms of use](TERMS.md)
+- [Update manifest and release workflow](docs/UPDATES.md)
 - [Third-party notices — English](THIRD_PARTY_NOTICES.en.md)
 - [Third-party notices — Portuguese](THIRD_PARTY_NOTICES.pt_BR.md)
 

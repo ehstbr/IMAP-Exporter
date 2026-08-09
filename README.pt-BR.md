@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Versão 0.4.13" src="https://img.shields.io/badge/vers%C3%A3o-0.4.13-3584e4">
+  <img alt="Versão 0.5.0" src="https://img.shields.io/badge/vers%C3%A3o-0.5.0-3584e4">
   <img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-26a269">
   <img alt="Python 3.10 ou superior" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -56,6 +56,9 @@ somente quando você decide abri-los ou baixá-los.
   segura.
 - Interface em português e inglês, ícones simbólicos e estilo GTK 4 testado em
   GNOME, LXQt/Lubuntu e outros ambientes Linux.
+- Verificação segura de atualizações pelo GitHub no startup e pela janela
+  Sobre, com aviso opcional não bloqueante, política de atualização obrigatória,
+  resumo da release e changelog completo recolhível.
 
 ## Capturas de tela
 
@@ -116,6 +119,11 @@ A sincronização normal não obtém o corpo das mensagens nem os bytes dos anex
 O leitor solicita apenas o e-mail escolhido e mantém seu conteúdo na memória da
 janela. Os bytes de um anexo só são gravados no local escolhido pelo usuário.
 
+Uma vez por abertura, o atualizador solicita somente o arquivo público
+`version.json` do repositório oficial no GitHub. Ele não envia telemetria,
+identificador da instalação, dados da conta ou metadados das mensagens. Falhas
+de rede ou do GitHub nunca impedem a inicialização normal.
+
 ## Provedores pré-configurados
 
 | Provedor | Servidor IMAP | Porta | Observação |
@@ -132,7 +140,7 @@ janela. Os bytes de um anexo só são gravados no local escolhido pelo usuário.
 
 `Outro servidor IMAP` aceita qualquer serviço compatível com autenticação por
 senha em IMAP sobre SSL/TLS. Outlook.com, Hotmail e outros serviços exclusivos
-de OAuth2 não foram incluídos porque a versão 0.4.13 ainda não implementa OAuth2.
+de OAuth2 não foram incluídos porque a versão 0.5.0 ainda não implementa OAuth2.
 O Proton Mail depende do aplicativo Bridge, e não de uma conexão IMAP direta
 comum.
 
@@ -146,7 +154,7 @@ senha na documentação atual do serviço.
 Em Debian, Ubuntu, Lubuntu, Linux Mint e derivados:
 
 ```bash
-sudo apt install ./imap-exporter_0.4.13_all.deb
+sudo apt install ./imap-exporter_0.5.0_all.deb
 ```
 
 Ao usar `apt install`, o sistema instala as dependências declaradas: Python 3,
@@ -258,6 +266,7 @@ O GitHub Actions executa a mesma suíte em cada `push` e `pull request`.
 - [Guia de contribuição](CONTRIBUTING.md)
 - [Política de segurança](SECURITY.md)
 - [Termos de uso](TERMS.md)
+- [Manifesto de atualização e publicação](docs/UPDATES.pt-BR.md)
 - [Avisos de terceiros — inglês](THIRD_PARTY_NOTICES.en.md)
 - [Avisos de terceiros — português](THIRD_PARTY_NOTICES.pt_BR.md)
 

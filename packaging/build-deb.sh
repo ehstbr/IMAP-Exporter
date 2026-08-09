@@ -3,7 +3,8 @@ set -eu
 
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 VERSION=$(
-    sed -n 's/^APP_VERSION = "\([^"]*\)"/\1/p' "$PROJECT_DIR/app.py"
+    sed -n 's/^__version__ = "\([^"]*\)"/\1/p' \
+        "$PROJECT_DIR/mail_exporter/__init__.py"
 )
 OUTPUT_DIR=${1:-"$PROJECT_DIR/dist"}
 BUILD_DIR=$(mktemp -d)
@@ -15,7 +16,7 @@ cleanup() {
 trap cleanup EXIT HUP INT TERM
 
 if [ -z "$VERSION" ]; then
-    echo "Could not determine the version from app.py." >&2
+    echo "Could not determine the version from mail_exporter/__init__.py." >&2
     exit 1
 fi
 
@@ -80,10 +81,15 @@ install -m 0644 \
     "$PACKAGE_DIR/usr/share/polkit-1/actions/"
 install -m 0644 \
     "$PROJECT_DIR/README.md" \
+    "$PROJECT_DIR/README.pt-BR.md" \
     "$PROJECT_DIR/TERMS.md" \
     "$PROJECT_DIR/LICENSE" \
     "$PROJECT_DIR/THIRD_PARTY_NOTICES.pt_BR.md" \
     "$PROJECT_DIR/THIRD_PARTY_NOTICES.en.md" \
+    "$PACKAGE_DIR/usr/share/doc/imap-exporter/"
+install -m 0644 \
+    "$PROJECT_DIR/docs/UPDATES.md" \
+    "$PROJECT_DIR/docs/UPDATES.pt-BR.md" \
     "$PACKAGE_DIR/usr/share/doc/imap-exporter/"
 install -m 0644 \
     "$PROJECT_DIR/packaging/debian/copyright" \
