@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Versão 0.5.1" src="https://img.shields.io/badge/vers%C3%A3o-0.5.1-3584e4">
+  <img alt="Versão 0.5.2" src="https://img.shields.io/badge/vers%C3%A3o-0.5.2-3584e4">
   <img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-26a269">
   <img alt="Python 3.10 ou superior" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -58,7 +58,8 @@ somente quando você decide abri-los ou baixá-los.
   GNOME, LXQt/Lubuntu e outros ambientes Linux.
 - Verificação automática silenciosa de atualizações pelo GitHub e ação manual
   na janela Sobre, com aviso opcional não bloqueante, política de atualização
-  obrigatória, resumo da release e changelog completo recolhível.
+  obrigatória, ícones distintos, botões de ação reais, resumo da release e uma
+  visualização própria para o changelog completo.
 
 ## Capturas de tela
 
@@ -156,7 +157,7 @@ senha na documentação atual do serviço.
 Em Debian, Ubuntu, Lubuntu, Linux Mint e derivados:
 
 ```bash
-sudo apt install ./imap-exporter_0.5.1_all.deb
+sudo apt install ./imap-exporter_0.5.2_all.deb
 ```
 
 Ao usar `apt install`, o sistema instala as dependências declaradas: Python 3,

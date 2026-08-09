@@ -18,9 +18,9 @@ não executa comandos de instalação.
 ```json
 {
   "schema_version": 1,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "mandatory": false,
-  "released_at": "2026-08-09T23:14:59Z",
+  "released_at": "2026-08-09T23:35:23Z",
   "summary": "Resumo curto da versão em texto puro.",
   "changelog": [
     "Primeira alteração em texto puro.",

@@ -3,6 +3,28 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.5.2] - 2026-08-09
+
+### Janela de atualização
+
+- O link textual para obter a release foi substituído por um botão real
+  `Baixar nova versão`.
+- O rodapé agora apresenta sempre duas ações com aparência de botão: `Baixar
+  nova versão` e `Agora não` nas atualizações opcionais; `Baixar nova versão`
+  e `Fechar aplicativo` nas obrigatórias.
+- O resumo e os itens do changelog passaram a ser texto comum não selecionável,
+  evitando a aparência de campos de formulário.
+- `Ver alterações` ganhou destaque visual, ícone próprio e deixou de expandir o
+  conteúdo verticalmente na mesma página.
+- O changelog completo agora abre em uma visualização interna dedicada, com
+  botão `Voltar` e rolagem restrita à lista, mantendo tamanho, posição e rodapé
+  da janela estáveis.
+- Adicionados ícones simbólicos distintos para atualização opcional e alerta de
+  atualização obrigatória, além de um cartão compacto com versão instalada,
+  versão disponível e data da release.
+- Adicionados estilos compatíveis com temas claros e escuros e testes de
+  regressão para os botões, textos, ícones e navegação entre as duas páginas.
+
 ## [0.5.1] - 2026-08-09
 
 ### Interface e atualizações
@@ -156,6 +178,7 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.5.2]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.2
 [0.5.1]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.1
 [0.5.0]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.0
 [0.4.13]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.13

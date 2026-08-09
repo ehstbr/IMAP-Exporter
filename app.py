@@ -278,14 +278,14 @@ class UpdateWindow(Gtk.Window):
         if manifest is None:
             raise ValueError("An update window requires a validated manifest.")
         mandatory = result.status == UpdateStatus.MANDATORY_UPDATE_REQUIRED
-        title = _("Atualização necessária") if mandatory else _("Atualização disponível")
+        title = _("Atualização obrigatória") if mandatory else _("Atualização disponível")
         super().__init__(title=title, application=application)
         if transient_for is not None and transient_for.get_visible():
             self.set_transient_for(transient_for)
         self.set_destroy_with_parent(False)
         self.set_modal(mandatory)
-        self.set_default_size(620, -1)
-        self.set_size_request(480, -1)
+        self.set_default_size(640, 620)
+        self.set_size_request(500, 500)
         self._mandatory = mandatory
         self.remote_version = result.remote_version
         self._on_close = on_close
@@ -297,37 +297,60 @@ class UpdateWindow(Gtk.Window):
         header = Gtk.HeaderBar()
         self.set_titlebar(header)
 
-        content_scroller = Gtk.ScrolledWindow()
-        content_scroller.set_policy(
+        self.page_stack = Gtk.Stack()
+        self.page_stack.set_hexpand(True)
+        self.page_stack.set_vexpand(True)
+        self.page_stack.set_transition_type(
+            Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
+        )
+        self.page_stack.set_transition_duration(180)
+        root.append(self.page_stack)
+
+        overview_scroller = Gtk.ScrolledWindow()
+        overview_scroller.set_policy(
             Gtk.PolicyType.NEVER,
             Gtk.PolicyType.AUTOMATIC,
         )
-        content_scroller.set_propagate_natural_height(True)
-        content_scroller.set_max_content_height(620)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        set_margins(content, 22)
-        content_scroller.set_child(content)
-        root.append(content_scroller)
+        overview = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        set_margins(overview, 22)
+        overview_scroller.set_child(overview)
+        self.page_stack.add_named(overview_scroller, "overview")
 
-        icon = Gtk.Image.new_from_icon_name(APP_ID)
-        icon.set_pixel_size(72)
-        icon.set_halign(Gtk.Align.CENTER)
-        content.append(icon)
+        icon_badge = Gtk.Box()
+        icon_badge.set_halign(Gtk.Align.CENTER)
+        icon_badge.set_valign(Gtk.Align.CENTER)
+        icon_badge.add_css_class("update-icon-badge")
+        icon_badge.add_css_class(
+            "update-critical" if mandatory else "update-available"
+        )
+        icon = Gtk.Image.new_from_icon_name(
+            "imap-update-critical-symbolic"
+            if mandatory
+            else "imap-update-available-symbolic"
+        )
+        icon.set_pixel_size(54)
+        icon_badge.append(icon)
+        overview.append(icon_badge)
 
-        heading = Gtk.Label(label=title, wrap=True)
+        heading_text = (
+            _("Atualização obrigatória disponível")
+            if mandatory
+            else _("Uma nova versão está disponível")
+        )
+        heading = Gtk.Label(label=heading_text, wrap=True)
         heading.set_justify(Gtk.Justification.CENTER)
         heading.add_css_class("title-1")
-        content.append(heading)
+        overview.append(heading)
 
         policy_text = (
             _(
-                "Esta versão precisa ser atualizada antes que o aplicativo "
-                "possa continuar sendo usado."
+                "Esta atualização é obrigatória. O IMAP Exporter não permitirá "
+                "novas operações com a versão atual."
             )
             if mandatory
             else _(
-                "Uma nova versão está disponível. Você pode obtê-la agora ou "
-                "continuar usando esta versão nesta sessão."
+                "Esta atualização é opcional. O IMAP Exporter pode continuar "
+                "funcionando enquanto você decide quando instalá-la."
             )
         )
         policy = Gtk.Label(
@@ -337,24 +360,7 @@ class UpdateWindow(Gtk.Window):
         )
         policy.set_max_width_chars(68)
         policy.add_css_class("dim-label")
-        content.append(policy)
-
-        versions = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=18,
-        )
-        versions.set_halign(Gtk.Align.CENTER)
-        installed = Gtk.Label(
-            label=f"{_('Versão instalada')}: {result.current_version}"
-        )
-        available = Gtk.Label(
-            label=f"{_('Nova versão')}: {manifest.version}"
-        )
-        installed.add_css_class("heading")
-        available.add_css_class("heading")
-        versions.append(installed)
-        versions.append(available)
-        content.append(versions)
+        overview.append(policy)
 
         local_date = manifest.released_at.astimezone()
         date_text = (
@@ -362,46 +368,95 @@ class UpdateWindow(Gtk.Window):
             if get_language() == "pt_BR"
             else local_date.strftime("%Y-%m-%d")
         )
-        released = Gtk.Label(label=f"{_('Publicada em')}: {date_text}")
-        released.set_halign(Gtk.Align.CENTER)
-        released.add_css_class("dim-label")
-        content.append(released)
+
+        version_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        version_card.add_css_class("update-version-card")
+
+        def append_version_row(label: str, value: str) -> None:
+            if version_card.get_first_child() is not None:
+                version_card.append(
+                    Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+                )
+            row = Gtk.Box(
+                orientation=Gtk.Orientation.HORIZONTAL,
+                spacing=18,
+            )
+            row.add_css_class("update-version-row")
+            name = Gtk.Label(label=label, xalign=0)
+            name.set_hexpand(True)
+            value_label = Gtk.Label(label=value, xalign=1)
+            value_label.add_css_class("heading")
+            row.append(name)
+            row.append(value_label)
+            version_card.append(row)
+
+        append_version_row(_("Versão instalada"), result.current_version)
+        append_version_row(_("Nova versão"), manifest.version)
+        append_version_row(_("Publicada em"), date_text)
+        overview.append(version_card)
 
         summary_heading = Gtk.Label(label=_("Resumo"), xalign=0)
         summary_heading.add_css_class("title-3")
-        content.append(summary_heading)
+        overview.append(summary_heading)
         summary = Gtk.Label(label=manifest.summary, wrap=True, xalign=0)
-        summary.set_selectable(True)
+        summary.set_selectable(False)
         summary.set_use_markup(False)
-        content.append(summary)
+        summary.add_css_class("update-summary")
+        overview.append(summary)
 
-        changelog_revealer = Gtk.Revealer()
-        changelog_revealer.set_transition_type(
-            Gtk.RevealerTransitionType.SLIDE_DOWN
+        details_button = icon_button(
+            _("Ver alterações"),
+            "imap-changelog-symbolic",
         )
-        changelog_revealer.set_transition_duration(180)
-        changelog_revealer.set_reveal_child(False)
-        changelog_box = Gtk.Box(
+        details_button.set_halign(Gtk.Align.START)
+        details_button.add_css_class("update-details-action")
+        details_button.set_tooltip_text(_("Mostrar as alterações desta versão"))
+        details_button.connect(
+            "clicked",
+            lambda _button: self.page_stack.set_visible_child_name("changes"),
+        )
+        overview.append(details_button)
+
+        changes_page = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
-            spacing=8,
+            spacing=14,
         )
+        set_margins(changes_page, 22)
+        changes_header = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=12,
+        )
+        back_button = icon_button(_("Voltar"), "imap-back-symbolic")
+        back_button.set_tooltip_text(_("Voltar ao resumo da atualização"))
+        back_button.connect(
+            "clicked",
+            lambda _button: self.page_stack.set_visible_child_name("overview"),
+        )
+        changes_heading = Gtk.Label(
+            label=_("Alterações da versão"),
+            xalign=0,
+        )
+        changes_heading.set_hexpand(True)
+        changes_heading.add_css_class("title-2")
+        changes_header.append(back_button)
+        changes_header.append(changes_heading)
+        changes_page.append(changes_header)
+
         changelog_scroller = Gtk.ScrolledWindow()
         changelog_scroller.set_policy(
             Gtk.PolicyType.NEVER,
             Gtk.PolicyType.AUTOMATIC,
         )
-        changelog_scroller.set_min_content_height(120)
-        changelog_scroller.set_max_content_height(260)
-        changelog_scroller.set_propagate_natural_height(True)
+        changelog_scroller.set_vexpand(True)
         changelog_list = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
-            spacing=8,
+            spacing=0,
         )
-        set_margins(changelog_list, 12)
         for item in manifest.changelog:
-            row = Gtk.Label(label=f"• {item}", wrap=True, xalign=0)
-            row.set_selectable(True)
+            row = Gtk.Label(label=f"•  {item}", wrap=True, xalign=0)
+            row.set_selectable(False)
             row.set_use_markup(False)
+            row.add_css_class("update-changelog-row")
             changelog_list.append(row)
         if not manifest.changelog:
             empty = Gtk.Label(
@@ -410,57 +465,57 @@ class UpdateWindow(Gtk.Window):
                 xalign=0,
             )
             empty.add_css_class("dim-label")
+            empty.add_css_class("update-changelog-row")
             changelog_list.append(empty)
         changelog_scroller.set_child(changelog_list)
-        changelog_box.append(rounded_scroll_frame(changelog_scroller))
-        changelog_revealer.set_child(changelog_box)
-
-        details_button = Gtk.Button(label=_("Ver todas as alterações"))
-        details_button.set_halign(Gtk.Align.START)
-        details_button.add_css_class("flat")
-        details_button.set_tooltip_text(_("Exibir o changelog completo"))
-
-        def toggle_details(_button: Gtk.Button) -> None:
-            expanded = not changelog_revealer.get_reveal_child()
-            changelog_revealer.set_reveal_child(expanded)
-            details_button.set_label(
-                _("Ocultar alterações")
-                if expanded
-                else _("Ver todas as alterações")
-            )
-
-        details_button.connect("clicked", toggle_details)
-        content.append(details_button)
-        content.append(changelog_revealer)
+        changes_page.append(rounded_scroll_frame(changelog_scroller))
+        self.page_stack.add_named(changes_page, "changes")
+        self.page_stack.set_visible_child_name("overview")
 
         self.exit_status = Gtk.Label(wrap=True, xalign=0)
         self.exit_status.add_css_class("dim-label")
+        self.exit_status.add_css_class("update-exit-status")
         self.exit_status.set_visible(False)
-        content.append(self.exit_status)
+        root.append(self.exit_status)
 
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         root.append(separator)
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        footer.set_halign(Gtk.Align.END)
+        footer.set_halign(Gtk.Align.CENTER)
         set_margins(footer, 16)
         root.append(footer)
 
-        release_button = Gtk.LinkButton.new_with_label(
-            LATEST_RELEASE_URL,
-            _("Obter atualização"),
+        release_button = Gtk.Button(
+            label=_("Baixar nova versão"),
         )
         release_button.set_tooltip_text(LATEST_RELEASE_URL)
         release_button.add_css_class("suggested-action")
+        release_button.add_css_class("update-footer-button")
+
+        def open_release(_button: Gtk.Button) -> None:
+            try:
+                Gio.AppInfo.launch_default_for_uri(LATEST_RELEASE_URL, None)
+            except GLib.Error as exc:
+                logging.getLogger("imap_exporter.update").warning(
+                    "Could not open the release page: %s",
+                    exc,
+                )
+                self.exit_status.set_text(
+                    _("Não foi possível abrir a página da release no navegador.")
+                )
+                self.exit_status.set_visible(True)
+
+        release_button.connect("clicked", open_release)
         if mandatory:
-            self.secondary_button = Gtk.Button(label=_("Sair"))
+            self.secondary_button = Gtk.Button(label=_("Fechar aplicativo"))
+            self.secondary_button.add_css_class("destructive-action")
             self.secondary_button.connect("clicked", lambda _button: on_quit())
         else:
-            self.secondary_button = Gtk.Button(
-                label=_("Continuar usando esta versão")
-            )
+            self.secondary_button = Gtk.Button(label=_("Agora não"))
             self.secondary_button.connect("clicked", lambda _button: self.close())
-        footer.append(self.secondary_button)
+        self.secondary_button.add_css_class("update-footer-button")
         footer.append(release_button)
+        footer.append(self.secondary_button)
         self.set_default_widget(release_button)
 
         key_controller = Gtk.EventControllerKey()
@@ -478,6 +533,9 @@ class UpdateWindow(Gtk.Window):
     ) -> bool:
         if keyval != Gdk.KEY_Escape:
             return False
+        if self.page_stack.get_visible_child_name() == "changes":
+            self.page_stack.set_visible_child_name("overview")
+            return True
         if self._mandatory:
             self._on_quit()
         else:

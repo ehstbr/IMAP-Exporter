@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "version": "0.5.1",
-  "mandatory": true,
-  "released_at": "2026-08-09T23:14:59Z",
-  "summary": "This maintenance release makes automatic update checks fully silent and simplifies the main header for a cleaner GTK 4 interface.",
+  "version": "0.5.2",
+  "mandatory": false,
+  "released_at": "2026-08-09T23:35:23Z",
+  "summary": "This maintenance release redesigns the update notice with clearer actions, plain non-selectable text, and a dedicated changelog view.",
   "changelog": [
-    "Automatic update checks now run silently in the background without showing a spinner, status panel, or startup overlay.",
-    "The main interface is available immediately and is never blocked while the automatic check is in progress.",
-    "Optional and mandatory update notices continue to appear only when a newer release requires attention.",
-    "The manual Check for updates action in the About window retains visible progress and result feedback.",
-    "Removed the descriptive subtitle from the main header.",
-    "Centered the single-line application title vertically using the native GTK HeaderBar layout.",
-    "Added regression tests for the silent startup flow and simplified header structure."
+    "Replaced the release hyperlink with a real Download new version button.",
+    "The update footer now consistently presents two real buttons for optional and mandatory releases.",
+    "Release summaries and changelog entries are rendered as plain non-selectable text.",
+    "Replaced the expanding changelog with a dedicated in-window view that keeps the window and footer stable.",
+    "Added a clearly styled View changes button with an icon and a Back action on the changelog page.",
+    "Added distinct update-available and critical-warning symbolic icons for optional and mandatory notices.",
+    "Added a compact version information card and regression coverage for the redesigned update window."
   ]
 }

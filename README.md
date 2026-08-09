@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.5.1" src="https://img.shields.io/badge/version-0.5.1-3584e4">
+  <img alt="Version 0.5.2" src="https://img.shields.io/badge/version-0.5.2-3584e4">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-26a269">
   <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -56,7 +56,8 @@ download them.
   GNOME, LXQt/Lubuntu, and other Linux desktop environments.
 - Silent GitHub-based automatic update checks and a manual action in the About
   window, with an optional non-blocking notice, mandatory-update policy,
-  release summary, and expandable complete changelog.
+  distinct status icons, real action buttons, a release summary, and a
+  dedicated complete-changelog view.
 
 ## Screenshots
 
@@ -152,7 +153,7 @@ in the provider's current documentation.
 On Debian, Ubuntu, Lubuntu, Linux Mint, and derivatives:
 
 ```bash
-sudo apt install ./imap-exporter_0.5.1_all.deb
+sudo apt install ./imap-exporter_0.5.2_all.deb
 ```
 
 Using `apt install` allows the system to install the declared dependencies:

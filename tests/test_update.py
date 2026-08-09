@@ -309,6 +309,41 @@ class UpdateIntegrationSourceTests(unittest.TestCase):
         self.assertIn("self.set_destroy_with_parent(False)", source)
         self.assertIn("self.set_transient_for(transient_for)", source)
 
+    def test_update_window_uses_buttons_plain_text_and_a_separate_changelog_page(self) -> None:
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        start = source.index("class UpdateWindow(Gtk.Window):")
+        end = source.index("\n\nclass MainWindow", start)
+        window = source[start:end]
+
+        self.assertNotIn("Gtk.LinkButton", window)
+        self.assertNotIn("Gtk.Revealer", window)
+        self.assertNotIn("set_selectable(True)", window)
+        self.assertGreaterEqual(window.count("set_selectable(False)"), 2)
+        self.assertIn('label=_("Baixar nova versão")', window)
+        self.assertIn('label=_("Agora não")', window)
+        self.assertIn('label=_("Fechar aplicativo")', window)
+        self.assertIn('footer.append(release_button)', window)
+        self.assertIn('footer.append(self.secondary_button)', window)
+        self.assertIn('self.page_stack.add_named(overview_scroller, "overview")', window)
+        self.assertIn('self.page_stack.add_named(changes_page, "changes")', window)
+        self.assertIn('"imap-update-available-symbolic"', window)
+        self.assertIn('"imap-update-critical-symbolic"', window)
+        self.assertIn('"imap-changelog-symbolic"', window)
+        self.assertIn("Gio.AppInfo.launch_default_for_uri", window)
+
+        for icon_name in (
+            "imap-update-available-symbolic.svg",
+            "imap-update-critical-symbolic.svg",
+            "imap-changelog-symbolic.svg",
+        ):
+            self.assertTrue(
+                (
+                    ROOT
+                    / "assets/icons/hicolor/scalable/actions"
+                    / icon_name
+                ).is_file()
+            )
+
     def test_mandatory_policy_resumes_existing_work_and_blocks_new_work(self) -> None:
         source = (ROOT / "app.py").read_text(encoding="utf-8")
         start = source.index("    def prepare_for_mandatory_update(")

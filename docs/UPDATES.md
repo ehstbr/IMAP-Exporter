@@ -18,9 +18,9 @@ commands.
 ```json
 {
   "schema_version": 1,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "mandatory": false,
-  "released_at": "2026-08-09T23:14:59Z",
+  "released_at": "2026-08-09T23:35:23Z",
   "summary": "Short plain-text release summary.",
   "changelog": [
     "First plain-text change.",
