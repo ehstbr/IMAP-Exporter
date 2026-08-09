@@ -6,18 +6,21 @@ IMAP Exporter checks the following HTTPS document once per application start:
 https://raw.githubusercontent.com/ehstbr/IMAP-Exporter/main/version.json
 ```
 
-The same update service is used by the **Check for updates** action in the
-About window. It does not use the GitHub API, scrape release pages, download
-packages, or run installation commands.
+The automatic request is silent and runs in the background without a startup
+panel, spinner, or temporary interface lock. The same update service is used by
+the **Check for updates** action in the About window, where progress remains
+visible because the user explicitly requested the check. It does not use the
+GitHub API, scrape release pages, download packages, or run installation
+commands.
 
 ## Schema 1
 
 ```json
 {
   "schema_version": 1,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "mandatory": false,
-  "released_at": "2026-08-09T16:20:23Z",
+  "released_at": "2026-08-09T23:14:59Z",
   "summary": "Short plain-text release summary.",
   "changelog": [
     "First plain-text change.",
@@ -36,7 +39,8 @@ packages, or run installation commands.
 Remote text is rendered as plain text. Invalid JSON, missing fields, unknown
 schemas, invalid types, HTTP errors, redirects outside HTTPS, timeouts, and
 oversized responses are treated as check failures. Startup remains fail-open:
-the application continues normally when the current policy cannot be verified.
+the application is immediately usable and continues normally when the current
+policy cannot be verified.
 
 ## Optional and mandatory releases
 

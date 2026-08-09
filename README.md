@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.5.0" src="https://img.shields.io/badge/version-0.5.0-3584e4">
+  <img alt="Version 0.5.1" src="https://img.shields.io/badge/version-0.5.1-3584e4">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-26a269">
   <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
@@ -54,9 +54,9 @@ download them.
   the IMAP server provides identifiers that make restoration safe.
 - Portuguese and English interface, symbolic icons, and GTK 4 styling tested for
   GNOME, LXQt/Lubuntu, and other Linux desktop environments.
-- Safe GitHub-based update checks at startup and from the About window, with an
-  optional non-blocking notice, mandatory-update policy, release summary, and
-  expandable complete changelog.
+- Silent GitHub-based automatic update checks and a manual action in the About
+  window, with an optional non-blocking notice, mandatory-update policy,
+  release summary, and expandable complete changelog.
 
 ## Screenshots
 
@@ -116,10 +116,11 @@ Normal synchronization does not fetch message bodies or attachment bytes. The
 reader requests only the selected message and keeps its content in the window's
 memory. Attachment bytes are written only to a location chosen by the user.
 
-Once per startup, the updater requests only the public `version.json` file from
-the official GitHub repository. It sends no telemetry, installation identifier,
-account data, or message metadata. Network or GitHub failures never prevent
-normal startup.
+Once per startup, the updater silently requests only the public `version.json`
+file from the official GitHub repository. The request runs in the background
+without displaying a progress panel or blocking the main interface. It sends no
+telemetry, installation identifier, account data, or message metadata. Network
+or GitHub failures never prevent normal startup.
 
 ## Preconfigured providers
 
@@ -137,8 +138,9 @@ normal startup.
 
 `Other IMAP server` accepts any service compatible with password authentication
 over IMAP SSL/TLS. Outlook.com, Hotmail, and other OAuth2-only services are not
-included because version 0.5.0 does not implement OAuth2. Proton Mail requires
-its Bridge application rather than a regular direct IMAP connection.
+included because the application does not currently implement OAuth2. Proton
+Mail requires its Bridge application rather than a regular direct IMAP
+connection.
 
 Provider requirements may change. Confirm IMAP access and password requirements
 in the provider's current documentation.
@@ -150,7 +152,7 @@ in the provider's current documentation.
 On Debian, Ubuntu, Lubuntu, Linux Mint, and derivatives:
 
 ```bash
-sudo apt install ./imap-exporter_0.5.0_all.deb
+sudo apt install ./imap-exporter_0.5.1_all.deb
 ```
 
 Using `apt install` allows the system to install the declared dependencies:

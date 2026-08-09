@@ -13,7 +13,7 @@ O arquivo será criado em `dist/`. Para instalar com resolução automática das
 dependências:
 
 ```bash
-sudo apt install ./dist/imap-exporter_0.5.0_all.deb
+sudo apt install ./dist/imap-exporter_0.5.1_all.deb
 ```
 
 O pacote é independente de arquitetura e foi preparado para Debian, Ubuntu,

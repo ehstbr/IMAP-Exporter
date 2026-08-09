@@ -255,7 +255,7 @@ class UpdateIntegrationSourceTests(unittest.TestCase):
         build_source = (ROOT / "packaging/build-deb.sh").read_text(encoding="utf-8")
         self.assertIn("APP_VERSION = __version__", app_source)
         self.assertIn('mail_exporter/__init__.py', build_source)
-        self.assertNotIn('APP_VERSION = "0.5.0"', app_source)
+        self.assertNotIn(f'APP_VERSION = "{__version__}"', app_source)
 
     def test_startup_and_about_share_one_service(self) -> None:
         source = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -264,6 +264,39 @@ class UpdateIntegrationSourceTests(unittest.TestCase):
         self.assertIn("CheckSource.MANUAL", source)
         self.assertIn("request_manual_update_check", source)
         self.assertIn("GLib.idle_add", source)
+
+    def test_automatic_startup_check_is_silent_and_does_not_gate_the_ui(self) -> None:
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        activation_start = source.index("    def do_activate(self) -> None:")
+        activation_end = source.index(
+            "    def _start_startup_update_check(self) -> bool:",
+            activation_start,
+        )
+        activation = source[activation_start:activation_end]
+        self.assertIn("window.present()", activation)
+        self.assertIn("GLib.idle_add(self._start_startup_update_check)", activation)
+        self.assertNotIn("set_sensitive(False)", activation)
+        self.assertNotIn("set_runtime_allowed", source)
+        self.assertNotIn("runtime_revealer", source)
+        self.assertNotIn("runtime_spinner", source)
+        self.assertNotIn('_("Verificando atualizações…")', source)
+
+    def test_main_header_uses_one_vertically_centered_title(self) -> None:
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        build_start = source.index("    def _build_window(self) -> None:")
+        build_end = source.index(
+            "    def _build_main_menu(self, header: Gtk.HeaderBar) -> None:",
+            build_start,
+        )
+        header_build = source[build_start:build_end]
+        self.assertIn("title.set_valign(Gtk.Align.CENTER)", header_build)
+        self.assertIn("header.set_title_widget(title)", header_build)
+        self.assertNotIn("title_box", header_build)
+        self.assertNotIn("subtitle", header_build)
+        self.assertNotIn(
+            "Metadados por padrão; conteúdo somente sob demanda",
+            header_build,
+        )
 
     def test_update_window_policy_does_not_use_always_on_top_or_auto_install(self) -> None:
         source = (ROOT / "app.py").read_text(encoding="utf-8")

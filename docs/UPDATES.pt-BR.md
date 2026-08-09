@@ -6,18 +6,21 @@ O IMAP Exporter consulta o seguinte documento HTTPS uma vez a cada abertura:
 https://raw.githubusercontent.com/ehstbr/IMAP-Exporter/main/version.json
 ```
 
-O mesmo serviço atende à ação **Verificar atualizações** da janela Sobre. Ele
-não usa a API do GitHub, não interpreta a página da release, não baixa pacotes
-e não executa comandos de instalação.
+A consulta automática é silenciosa e ocorre em segundo plano, sem painel de
+startup, spinner ou bloqueio temporário da interface. O mesmo serviço atende à
+ação **Verificar atualizações** da janela Sobre, onde o progresso permanece
+visível porque a consulta foi solicitada explicitamente pelo usuário. Ele não
+usa a API do GitHub, não interpreta a página da release, não baixa pacotes e
+não executa comandos de instalação.
 
 ## Schema 1
 
 ```json
 {
   "schema_version": 1,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "mandatory": false,
-  "released_at": "2026-08-09T16:20:23Z",
+  "released_at": "2026-08-09T23:14:59Z",
   "summary": "Resumo curto da versão em texto puro.",
   "changelog": [
     "Primeira alteração em texto puro.",
@@ -36,8 +39,8 @@ e não executa comandos de instalação.
 O texto remoto é renderizado como texto puro. JSON inválido, campos ausentes,
 schema desconhecido, tipos incorretos, erros HTTP, redirecionamento para fora
 de HTTPS, timeout e resposta excessiva são falhas da verificação. O startup é
-fail-open: o aplicativo continua funcionando quando não consegue validar a
-política atual.
+fail-open: a interface fica disponível imediatamente e o aplicativo continua
+funcionando quando não consegue validar a política atual.
 
 ## Versões opcionais e obrigatórias
 

@@ -3,6 +3,26 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.5.1] - 2026-08-09
+
+### Interface e atualizações
+
+- A verificação automática de atualizações passou a acontecer de forma
+  totalmente silenciosa em segundo plano, sem spinner, painel de status ou
+  sobreposição na janela principal.
+- A interface fica disponível imediatamente e não é bloqueada enquanto a
+  consulta automática está em andamento. Falhas continuam silenciosas e não
+  interferem no uso do aplicativo.
+- Avisos de atualização opcional ou obrigatória continuam aparecendo somente
+  quando uma versão mais recente realmente exige a atenção do usuário.
+- A verificação manual da janela Sobre preserva o progresso e o resultado
+  visíveis, pois é uma ação iniciada explicitamente pelo usuário.
+- Removido o subtítulo descritivo do cabeçalho principal.
+- O título de uma única linha passou a ser centralizado verticalmente pelo
+  `Gtk.HeaderBar`, sem margens fixas dependentes do tema do desktop.
+- Adicionados testes de regressão para o startup silencioso e para a estrutura
+  simplificada do cabeçalho.
+
 ## [0.5.0] - 2026-08-09
 
 ### Atualizações
@@ -136,6 +156,7 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.5.1]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.1
 [0.5.0]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.0
 [0.4.13]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.13
 [0.4.12]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.4.12

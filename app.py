@@ -569,7 +569,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.attachment_analysis_pause_event = threading.Event()
         self.attachment_analysis_running = False
         self.export_operation_active = False
-        self.runtime_allowed = False
 
         self._build_window()
         self.refresh_accounts()
@@ -586,16 +585,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.back_button.set_visible(False)
         header.pack_start(self.back_button)
 
-        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         title = Gtk.Label(label=f"{_(APP_NAME)} {APP_VERSION}")
         title.add_css_class("title")
-        subtitle = Gtk.Label(
-            label=_("Metadados por padrão; conteúdo somente sob demanda")
-        )
-        subtitle.add_css_class("dim-label")
-        title_box.append(title)
-        title_box.append(subtitle)
-        header.set_title_widget(title_box)
+        title.set_valign(Gtk.Align.CENTER)
+        header.set_title_widget(title)
 
         self.add_button = icon_button(_("Adicionar conta"), "imap-add-symbolic")
         self.add_button.set_tooltip_text(_("Cadastrar uma nova conta IMAP"))
@@ -608,41 +601,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.set_transition_duration(180)
         self.stack.set_vexpand(True)
-
-        self.runtime_overlay = Gtk.Overlay()
-        self.runtime_overlay.set_child(self.stack)
-        self.runtime_overlay.set_vexpand(True)
-        runtime_card = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=10,
-        )
-        runtime_card.set_halign(Gtk.Align.CENTER)
-        runtime_card.set_valign(Gtk.Align.CENTER)
-        runtime_card.add_css_class("folder-loading-card")
-        self.runtime_spinner = Gtk.Spinner()
-        self.runtime_spinner.set_halign(Gtk.Align.CENTER)
-        runtime_card.append(self.runtime_spinner)
-        self.runtime_status = Gtk.Label(
-            label=_("Verificando atualizações…"),
-            wrap=True,
-            justify=Gtk.Justification.CENTER,
-        )
-        runtime_card.append(self.runtime_status)
-        self.runtime_revealer = Gtk.Revealer()
-        self.runtime_revealer.set_transition_type(
-            Gtk.RevealerTransitionType.CROSSFADE
-        )
-        self.runtime_revealer.set_transition_duration(160)
-        self.runtime_revealer.set_child(runtime_card)
-        self.runtime_revealer.set_reveal_child(True)
-        self.runtime_overlay.add_overlay(self.runtime_revealer)
-        root.append(self.runtime_overlay)
+        root.append(self.stack)
 
         self._build_accounts_page()
         self._build_folders_page()
         self._build_progress_page()
         self._build_results_page()
-        self.set_runtime_allowed(False)
 
     def _build_main_menu(self, header: Gtk.HeaderBar) -> None:
         about_action = Gio.SimpleAction.new("about", None)
@@ -710,37 +674,6 @@ class MainWindow(Gtk.ApplicationWindow):
             ),
         )
 
-    def set_runtime_allowed(
-        self,
-        allowed: bool,
-        *,
-        mandatory: bool = False,
-    ) -> None:
-        self.runtime_allowed = allowed
-        if allowed:
-            self.runtime_spinner.stop()
-            self.runtime_revealer.set_reveal_child(False)
-            self.stack.set_sensitive(True)
-            self.add_button.set_sensitive(True)
-            self.back_button.set_sensitive(True)
-            self._show_page(self.stack.get_visible_child_name() or "accounts")
-            return
-
-        self.runtime_status.set_text(
-            _("Atualização necessária")
-            if mandatory
-            else _("Verificando atualizações…")
-        )
-        if mandatory:
-            self.runtime_spinner.stop()
-        else:
-            self.runtime_spinner.start()
-        self.runtime_revealer.set_reveal_child(True)
-        self.add_button.set_sensitive(False)
-        self.back_button.set_sensitive(False)
-        self.rebuild_index_action.set_enabled(False)
-        self.stack.set_sensitive(False)
-
     def has_critical_operation(self) -> bool:
         return bool(
             (self.current_thread is not None and self.current_thread.is_alive())
@@ -751,10 +684,10 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def prepare_for_mandatory_update(self) -> bool:
         """Block new work and let any current operation reach a safe boundary."""
-        self.runtime_allowed = False
         self.add_button.set_sensitive(False)
         self.back_button.set_sensitive(False)
         self.rebuild_index_action.set_enabled(False)
+        self.stack.set_sensitive(False)
         if self.is_paused:
             self.is_paused = False
             self.pause_event.clear()
@@ -762,7 +695,6 @@ class MainWindow(Gtk.ApplicationWindow):
             self.cleanup_is_paused = False
             self.cleanup_pause_event.clear()
         self.attachment_analysis_pause_event.clear()
-        self.set_runtime_allowed(False, mandatory=True)
         return self.has_critical_operation()
 
     def _about_text_page(self, text: str) -> Gtk.Frame:
@@ -7511,7 +7443,6 @@ class HeaderExporterApplication(Gtk.Application):
             return
         if not self._startup_check_started:
             self._startup_check_started = True
-            window.set_runtime_allowed(False)
             GLib.idle_add(self._start_startup_update_check)
 
     def _start_startup_update_check(self) -> bool:
@@ -7566,7 +7497,6 @@ class HeaderExporterApplication(Gtk.Application):
             self._enter_mandatory_update_state(result)
             return False
 
-        window.set_runtime_allowed(True)
         if result.status == UpdateStatus.OPTIONAL_UPDATE_AVAILABLE:
             self._present_update_window(result, window)
         return False
@@ -7643,7 +7573,7 @@ class HeaderExporterApplication(Gtk.Application):
             return False
         if window.has_critical_operation():
             return True
-        window.set_runtime_allowed(False, mandatory=True)
+        window.stack.set_sensitive(False)
         return False
 
     def _present_update_window(
