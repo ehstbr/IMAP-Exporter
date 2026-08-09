@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version": "0.5.1",
-  "mandatory": false,
+  "mandatory": true,
   "released_at": "2026-08-09T23:14:59Z",
   "summary": "This maintenance release makes automatic update checks fully silent and simplifies the main header for a cleaner GTK 4 interface.",
   "changelog": [
