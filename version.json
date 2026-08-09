@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version": "0.5.3",
-  "mandatory": true,
+  "mandatory": false,
   "released_at": "2026-08-09T23:35:23Z",
   "summary": "This maintenance release redesigns the update notice with clearer actions, plain non-selectable text, and a dedicated changelog view.",
   "changelog": [
