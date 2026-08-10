@@ -3,6 +3,42 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.5.4] - 2026-08-09
+
+### Janela de atualização
+
+- O conjunto formado por ícone e texto foi centralizado dentro de cada botão
+  do rodapé, incluindo os estados `Ver alterações` e `Voltar`.
+- `Baixar nova versão`, `Agora não` e `Fechar aplicativo` passaram a usar
+  ícones simbólicos padrão do tema, preservando o estilo nativo do GTK.
+- Corrigido o botão `Agora não`, que agora fecha imediatamente o aviso de
+  atualização opcional.
+- Corrigido o X da barra de título, que passa pelo mesmo fluxo de encerramento
+  do aviso opcional e libera corretamente a referência mantida pela aplicação.
+- Preservada a política obrigatória: o X de uma atualização mandatória continua
+  solicitando a saída segura do aplicativo em vez de simplesmente ignorá-la.
+- Adicionados testes de regressão para alinhamento, ícones e semântica do sinal
+  `close-request` do GTK 4.
+
+## [0.5.3] - 2026-08-09
+
+### Janela de atualização
+
+- O botão `Ver alterações` foi movido para o rodapé, na mesma linha de `Baixar
+  nova versão` e `Agora não` ou `Fechar aplicativo`.
+- As três ações agora ocupam larguras equivalentes e se expandem de forma
+  uniforme, preservando uma composição equilibrada em diferentes temas GTK.
+- Ao abrir a página dedicada do changelog, o primeiro botão do rodapé passa a
+  ser `Voltar`, mantendo a navegação no mesmo lugar e sem duplicar controles
+  dentro do conteúdo.
+- Os selos gráficos compostos do topo foram substituídos diretamente pelos
+  ícones padrão `software-update-available-symbolic` e
+  `dialog-warning-symbolic` fornecidos pelo tema do sistema.
+- Removidos do pacote os ícones personalizados de atualização e changelog que
+  deixaram de ser necessários.
+- Adicionados testes de regressão para ordem e largura das ações, navegação,
+  ícones nativos e limpeza dos recursos distribuídos.
+
 ## [0.5.2] - 2026-08-09
 
 ### Janela de atualização
@@ -178,6 +214,8 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.5.4]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.4
+[0.5.3]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.3
 [0.5.2]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.2
 [0.5.1]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.1
 [0.5.0]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.0

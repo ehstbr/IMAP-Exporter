@@ -319,30 +319,90 @@ class UpdateIntegrationSourceTests(unittest.TestCase):
         self.assertNotIn("Gtk.Revealer", window)
         self.assertNotIn("set_selectable(True)", window)
         self.assertGreaterEqual(window.count("set_selectable(False)"), 2)
-        self.assertIn('label=_("Baixar nova versão")', window)
-        self.assertIn('label=_("Agora não")', window)
-        self.assertIn('label=_("Fechar aplicativo")', window)
+        self.assertIn('_("Baixar nova versão"),', window)
+        self.assertIn('_("Agora não"),', window)
+        self.assertIn('_("Fechar aplicativo"),', window)
+        self.assertIn('footer.append(self.details_button)', window)
         self.assertIn('footer.append(release_button)', window)
         self.assertIn('footer.append(self.secondary_button)', window)
+        self.assertLess(
+            window.index('footer.append(self.details_button)'),
+            window.index('footer.append(release_button)'),
+        )
+        self.assertLess(
+            window.index('footer.append(release_button)'),
+            window.index('footer.append(self.secondary_button)'),
+        )
         self.assertIn('self.page_stack.add_named(overview_scroller, "overview")', window)
         self.assertIn('self.page_stack.add_named(changes_page, "changes")', window)
-        self.assertIn('"imap-update-available-symbolic"', window)
-        self.assertIn('"imap-update-critical-symbolic"', window)
-        self.assertIn('"imap-changelog-symbolic"', window)
+        self.assertIn('"software-update-available-symbolic"', window)
+        self.assertIn('"dialog-warning-symbolic"', window)
+        self.assertIn('"view-list-symbolic"', window)
+        self.assertIn('"go-previous-symbolic"', window)
+        self.assertIn('"application-exit-symbolic"', window)
+        self.assertIn('"window-close-symbolic"', window)
+        self.assertNotIn("update-icon-badge", window)
+        self.assertNotIn('"imap-update-available-symbolic"', window)
+        self.assertNotIn('"imap-update-critical-symbolic"', window)
+        self.assertIn("self._toggle_changelog_page", window)
+        self.assertIn("self._show_update_page(\"overview\")", window)
         self.assertIn("Gio.AppInfo.launch_default_for_uri", window)
 
         for icon_name in (
             "imap-update-available-symbolic.svg",
             "imap-update-critical-symbolic.svg",
-            "imap-changelog-symbolic.svg",
         ):
-            self.assertTrue(
+            self.assertFalse(
                 (
                     ROOT
                     / "assets/icons/hicolor/scalable/actions"
                     / icon_name
                 ).is_file()
             )
+
+    def test_update_footer_has_three_equal_width_actions(self) -> None:
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        start = source.index("class UpdateWindow(Gtk.Window):")
+        end = source.index("\n\nclass MainWindow", start)
+        window = source[start:end]
+        css = (ROOT / "style.css").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)",
+            window,
+        )
+        self.assertIn("footer.set_halign(Gtk.Align.FILL)", window)
+        self.assertIn("footer.set_hexpand(True)", window)
+        self.assertGreaterEqual(window.count(".set_hexpand(True)"), 4)
+        self.assertIn("min-width: 140px", css)
+        self.assertNotIn(".update-icon-badge", css)
+        self.assertNotIn(".update-details-action", css)
+
+    def test_update_footer_centers_icon_labels_and_optional_close_is_allowed(self) -> None:
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        helper_start = source.index("def icon_label(")
+        helper_end = source.index("\n\ndef icon_only_button", helper_start)
+        helpers = source[helper_start:helper_end]
+        start = source.index("class UpdateWindow(Gtk.Window):")
+        end = source.index("\n\nclass MainWindow", start)
+        window = source[start:end]
+        close_start = window.index("    def _on_close_request(")
+        close_end = window.index("\n    def set_waiting_for_safe_exit", close_start)
+        close_handler = window[close_start:close_end]
+
+        self.assertIn("content.set_halign(Gtk.Align.CENTER)", helpers)
+        self.assertIn("icon_label(icon_name, label, centered=True)", helpers)
+        self.assertGreaterEqual(window.count("centered=True"), 2)
+        self.assertIn('"software-update-available-symbolic"', window)
+        self.assertIn('"window-close-symbolic"', window)
+        self.assertIn('"application-exit-symbolic"', window)
+        self.assertIn("self._on_close(self)", close_handler)
+        self.assertIn("return False", close_handler)
+        self.assertNotIn("self.destroy()", close_handler)
+        self.assertLess(
+            close_handler.index("if self._mandatory:"),
+            close_handler.index("return False"),
+        )
 
     def test_mandatory_policy_resumes_existing_work_and_blocks_new_work(self) -> None:
         source = (ROOT / "app.py").read_text(encoding="utf-8")

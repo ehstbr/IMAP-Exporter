@@ -127,8 +127,15 @@ def human_size(value: int | None) -> str:
     return f"{amount:.1f} TB"
 
 
-def icon_label(icon_name: str, label: str) -> Gtk.Box:
+def icon_label(
+    icon_name: str,
+    label: str,
+    *,
+    centered: bool = False,
+) -> Gtk.Box:
     content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    if centered:
+        content.set_halign(Gtk.Align.CENTER)
     image = Gtk.Image.new_from_icon_name(icon_name)
     image.set_pixel_size(16)
     content.append(image)
@@ -138,7 +145,7 @@ def icon_label(icon_name: str, label: str) -> Gtk.Box:
 
 def icon_button(label: str, icon_name: str) -> Gtk.Button:
     button = Gtk.Button()
-    button.set_child(icon_label(icon_name, label))
+    button.set_child(icon_label(icon_name, label, centered=True))
     return button
 
 
@@ -316,21 +323,15 @@ class UpdateWindow(Gtk.Window):
         overview_scroller.set_child(overview)
         self.page_stack.add_named(overview_scroller, "overview")
 
-        icon_badge = Gtk.Box()
-        icon_badge.set_halign(Gtk.Align.CENTER)
-        icon_badge.set_valign(Gtk.Align.CENTER)
-        icon_badge.add_css_class("update-icon-badge")
-        icon_badge.add_css_class(
-            "update-critical" if mandatory else "update-available"
-        )
         icon = Gtk.Image.new_from_icon_name(
-            "imap-update-critical-symbolic"
+            "dialog-warning-symbolic"
             if mandatory
-            else "imap-update-available-symbolic"
+            else "software-update-available-symbolic"
         )
-        icon.set_pixel_size(54)
-        icon_badge.append(icon)
-        overview.append(icon_badge)
+        icon.set_pixel_size(64)
+        icon.set_halign(Gtk.Align.CENTER)
+        icon.set_valign(Gtk.Align.CENTER)
+        overview.append(icon)
 
         heading_text = (
             _("Atualização obrigatória disponível")
@@ -404,43 +405,18 @@ class UpdateWindow(Gtk.Window):
         summary.add_css_class("update-summary")
         overview.append(summary)
 
-        details_button = icon_button(
-            _("Ver alterações"),
-            "imap-changelog-symbolic",
-        )
-        details_button.set_halign(Gtk.Align.START)
-        details_button.add_css_class("update-details-action")
-        details_button.set_tooltip_text(_("Mostrar as alterações desta versão"))
-        details_button.connect(
-            "clicked",
-            lambda _button: self.page_stack.set_visible_child_name("changes"),
-        )
-        overview.append(details_button)
-
         changes_page = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=14,
         )
         set_margins(changes_page, 22)
-        changes_header = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=12,
-        )
-        back_button = icon_button(_("Voltar"), "imap-back-symbolic")
-        back_button.set_tooltip_text(_("Voltar ao resumo da atualização"))
-        back_button.connect(
-            "clicked",
-            lambda _button: self.page_stack.set_visible_child_name("overview"),
-        )
         changes_heading = Gtk.Label(
             label=_("Alterações da versão"),
             xalign=0,
         )
         changes_heading.set_hexpand(True)
         changes_heading.add_css_class("title-2")
-        changes_header.append(back_button)
-        changes_header.append(changes_heading)
-        changes_page.append(changes_header)
+        changes_page.append(changes_heading)
 
         changelog_scroller = Gtk.ScrolledWindow()
         changelog_scroller.set_policy(
@@ -481,16 +457,30 @@ class UpdateWindow(Gtk.Window):
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         root.append(separator)
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        footer.set_halign(Gtk.Align.CENTER)
+        footer.set_halign(Gtk.Align.FILL)
+        footer.set_hexpand(True)
         set_margins(footer, 16)
         root.append(footer)
 
-        release_button = Gtk.Button(
-            label=_("Baixar nova versão"),
+        self.details_button = icon_button(
+            _("Ver alterações"),
+            "view-list-symbolic",
+        )
+        self.details_button.set_tooltip_text(
+            _("Mostrar as alterações desta versão")
+        )
+        self.details_button.add_css_class("update-footer-button")
+        self.details_button.set_hexpand(True)
+        self.details_button.connect("clicked", self._toggle_changelog_page)
+
+        release_button = icon_button(
+            _("Baixar nova versão"),
+            "software-update-available-symbolic",
         )
         release_button.set_tooltip_text(LATEST_RELEASE_URL)
         release_button.add_css_class("suggested-action")
         release_button.add_css_class("update-footer-button")
+        release_button.set_hexpand(True)
 
         def open_release(_button: Gtk.Button) -> None:
             try:
@@ -507,13 +497,21 @@ class UpdateWindow(Gtk.Window):
 
         release_button.connect("clicked", open_release)
         if mandatory:
-            self.secondary_button = Gtk.Button(label=_("Fechar aplicativo"))
+            self.secondary_button = icon_button(
+                _("Fechar aplicativo"),
+                "application-exit-symbolic",
+            )
             self.secondary_button.add_css_class("destructive-action")
             self.secondary_button.connect("clicked", lambda _button: on_quit())
         else:
-            self.secondary_button = Gtk.Button(label=_("Agora não"))
+            self.secondary_button = icon_button(
+                _("Agora não"),
+                "window-close-symbolic",
+            )
             self.secondary_button.connect("clicked", lambda _button: self.close())
         self.secondary_button.add_css_class("update-footer-button")
+        self.secondary_button.set_hexpand(True)
+        footer.append(self.details_button)
         footer.append(release_button)
         footer.append(self.secondary_button)
         self.set_default_widget(release_button)
@@ -523,6 +521,30 @@ class UpdateWindow(Gtk.Window):
         self.add_controller(key_controller)
         self.connect("close-request", self._on_close_request)
         self.connect("destroy", on_close)
+
+    def _show_update_page(self, page_name: str) -> None:
+        showing_changes = page_name == "changes"
+        self.page_stack.set_visible_child_name(page_name)
+        self.details_button.set_child(
+            icon_label(
+                "go-previous-symbolic" if showing_changes else "view-list-symbolic",
+                _("Voltar") if showing_changes else _("Ver alterações"),
+                centered=True,
+            )
+        )
+        self.details_button.set_tooltip_text(
+            _("Voltar ao resumo da atualização")
+            if showing_changes
+            else _("Mostrar as alterações desta versão")
+        )
+
+    def _toggle_changelog_page(self, _button: Gtk.Button) -> None:
+        next_page = (
+            "overview"
+            if self.page_stack.get_visible_child_name() == "changes"
+            else "changes"
+        )
+        self._show_update_page(next_page)
 
     def _on_key_pressed(
         self,
@@ -534,7 +556,7 @@ class UpdateWindow(Gtk.Window):
         if keyval != Gdk.KEY_Escape:
             return False
         if self.page_stack.get_visible_child_name() == "changes":
-            self.page_stack.set_visible_child_name("overview")
+            self._show_update_page("overview")
             return True
         if self._mandatory:
             self._on_quit()
@@ -543,14 +565,13 @@ class UpdateWindow(Gtk.Window):
         return True
 
     def _on_close_request(self, _window: Gtk.Window) -> bool:
-        if self._closing:
-            return False
         if self._mandatory:
             self._on_quit()
             return True
-        self._closing = True
-        self.destroy()
-        return True
+        if not self._closing:
+            self._closing = True
+            self._on_close(self)
+        return False
 
     def set_waiting_for_safe_exit(self) -> None:
         self.exit_status.set_text(
@@ -560,7 +581,13 @@ class UpdateWindow(Gtk.Window):
             )
         )
         self.exit_status.set_visible(True)
-        self.secondary_button.set_label(_("Concluindo operação…"))
+        self.secondary_button.set_child(
+            icon_label(
+                "process-working-symbolic",
+                _("Concluindo operação…"),
+                centered=True,
+            )
+        )
         self.secondary_button.set_sensitive(False)
 
 

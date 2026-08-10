@@ -2,15 +2,14 @@
   "schema_version": 1,
   "version": "0.5.4",
   "mandatory": false,
-  "released_at": "2026-08-09T23:35:23Z",
-  "summary": "This maintenance release redesigns the update notice with clearer actions, plain non-selectable text, and a dedicated changelog view.",
+  "released_at": "2026-08-10T00:25:05Z",
+  "summary": "This maintenance release completes the update footer and fixes dismissal of optional update notices.",
   "changelog": [
-    "Replaced the release hyperlink with a real Download new version button.",
-    "The update footer now consistently presents two real buttons for optional and mandatory releases.",
-    "Release summaries and changelog entries are rendered as plain non-selectable text.",
-    "Replaced the expanding changelog with a dedicated in-window view that keeps the window and footer stable.",
-    "Added a clearly styled View changes button with an icon and a Back action on the changelog page.",
-    "Added distinct update-available and critical-warning symbolic icons for optional and mandatory notices.",
-    "Added a compact version information card and regression coverage for the redesigned update window."
+    "Centered each icon-and-label group inside the three update footer buttons.",
+    "Added standard theme icons to Download new version, Not now, and Close application.",
+    "Fixed Not now so it dismisses an optional update notice immediately.",
+    "Fixed the title-bar close button so it dismisses optional notices through the same lifecycle path.",
+    "Preserved the mandatory-update policy: closing a required notice still requests a safe application exit.",
+    "Added regression coverage for button alignment, action icons, and optional-window close behavior."
   ]
 }
