@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version": "0.5.5",
-  "mandatory": false,
+  "mandatory": true,
   "released_at": "2026-08-10T00:25:05Z",
   "summary": "This maintenance release completes the update footer and fixes dismissal of optional update notices.",
   "changelog": [
