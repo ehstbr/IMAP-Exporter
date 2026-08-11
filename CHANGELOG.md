@@ -3,6 +3,21 @@
 Todas as mudanças relevantes do IMAP Exporter serão registradas neste arquivo.
 O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 
+## [0.5.5] - 2026-08-11
+
+### Licença
+
+- O código-fonte do IMAP Exporter e os recursos originais do projeto passaram
+  a ser distribuídos sob a GNU General Public License versão 3.
+- A aba `Licença` da janela Sobre agora apresenta um resumo da GPLv3 e o texto
+  oficial completo incluído no pacote.
+- Atualizadas as declarações de licença nos READMEs, traduções, avisos de
+  componentes, metadados AppStream e dados de copyright do pacote Debian.
+- As licenças próprias das dependências do sistema foram preservadas e
+  continuam documentadas separadamente.
+- Adicionadas verificações de regressão para impedir divergências entre a
+  interface, o arquivo `LICENSE` e os metadados de distribuição.
+
 ## [0.5.4] - 2026-08-09
 
 ### Janela de atualização
@@ -214,6 +229,7 @@ O projeto utiliza versões no formato `MAJOR.MINOR.PATCH`.
 - Pacote Debian com dependências declaradas, integração ao menu, ícones,
   metadados, licença, avisos de terceiros e política Polkit.
 - Interface em português e inglês por arquivos de tradução.
+[0.5.5]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.5
 [0.5.4]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.4
 [0.5.3]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.3
 [0.5.2]: https://github.com/ehstbr/IMAP-Exporter/releases/tag/v0.5.2

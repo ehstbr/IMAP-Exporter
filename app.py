@@ -56,27 +56,21 @@ from mail_exporter.secrets import InvalidAccountPassword, SecretCipher, SecretEr
 APP_ID = "io.github.ehstbr.imapexporter"
 APP_NAME = "IMAP Exporter"
 APP_VERSION = __version__
-MIT_LICENSE_FALLBACK = """MIT License
+GPL3_LICENSE_FALLBACK = """GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
 
 Copyright (c) 2026 Eduardo Henrique Silva Teixeira
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMAP Exporter is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 3 as published by the Free
+Software Foundation.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE."""
+The complete license text is available at:
+https://www.gnu.org/licenses/gpl-3.0.html"""
 DEVELOPER_NAME = "Eduardo Henrique Silva Teixeira"
 DEVELOPER_SITE = "https://eduhcommerce.com.br"
 DEVELOPER_EMAIL = "contato@eduhcommerce.com.br"
@@ -926,7 +920,7 @@ class MainWindow(Gtk.ApplicationWindow):
         open_source = Gtk.Label(
             label=(
                 f"{_('Projeto de código aberto')} · "
-                f"{_('Este aplicativo é distribuído sob a Licença MIT.')}"
+                f"{_('Este aplicativo é distribuído sob a GNU GPLv3.')}"
             ),
             wrap=True,
         )
@@ -1007,16 +1001,18 @@ class MainWindow(Gtk.ApplicationWindow):
 
         license_text = self._read_packaged_document(
             "LICENSE",
-            MIT_LICENSE_FALLBACK,
+            GPL3_LICENSE_FALLBACK,
         )
         license_intro = _(
-            "A Licença MIT permite usar, copiar, modificar e distribuir este "
-            "software, inclusive comercialmente, desde que o aviso de direitos "
-            "autorais e a licença sejam mantidos. O software é fornecido sem "
-            "garantias e com limitação de responsabilidade."
+            "O IMAP Exporter é software livre distribuído sob a GNU General "
+            "Public License versão 3. Você pode usar, estudar, modificar e "
+            "redistribuir o programa nos termos dessa licença. Distribuições "
+            "do aplicativo ou de versões modificadas devem preservar a mesma "
+            "licença, os avisos aplicáveis e o acesso ao código-fonte "
+            "correspondente. O software é fornecido sem garantias."
         )
         license_page = self._about_text_page(
-            f"{license_intro}\n\n{_('Texto oficial da Licença MIT')}\n\n"
+            f"{license_intro}\n\n{_('Texto oficial da GNU GPLv3')}\n\n"
             f"{license_text}"
         )
         pages.add_titled(
@@ -1032,7 +1028,7 @@ class MainWindow(Gtk.ApplicationWindow):
         )
         notices_fallback = _(
             "O código do IMAP Exporter e os ícones próprios incluídos no "
-            "pacote são distribuídos sob a Licença MIT.\n\n"
+            "pacote são distribuídos sob a GNU GPLv3.\n\n"
             "Python, GTK, PyGObject, OpenSSL e o tema de ícones Hicolor são "
             "dependências fornecidas separadamente pelo sistema operacional. "
             "Elas não são incorporadas ao código do aplicativo e conservam "

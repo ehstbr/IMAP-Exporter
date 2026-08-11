@@ -2946,7 +2946,7 @@ class WindowLayoutTest(unittest.TestCase):
         self.assertIn("https://github.com/ehstbr/IMAP-Exporter", update_source)
         self.assertIn("PROJECT_URL", source)
         self.assertIn("contato@eduhcommerce.com.br", source)
-        self.assertIn("MIT_LICENSE_FALLBACK", source)
+        self.assertIn("GPL3_LICENSE_FALLBACK", source)
         self.assertIn('self._read_packaged_document(', source)
         root = Path(__file__).parents[1]
         for filename in (
@@ -2958,6 +2958,17 @@ class WindowLayoutTest(unittest.TestCase):
             self.assertIn(f'"$PROJECT_DIR/{filename}"', (
                 root / "packaging" / "build-deb.sh"
             ).read_text(encoding="utf-8"))
+        license_text = (root / "LICENSE").read_text(encoding="utf-8")
+        self.assertIn("GNU GENERAL PUBLIC LICENSE", license_text)
+        self.assertIn("Version 3, 29 June 2007", license_text)
+        copyright_text = (
+            root / "packaging" / "debian" / "copyright"
+        ).read_text(encoding="utf-8")
+        self.assertIn("License: GPL-3", copyright_text)
+        metainfo = (
+            root / "packaging" / "io.github.ehstbr.imapexporter.metainfo.xml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("<project_license>GPL-3.0-only</project_license>", metainfo)
 
     def test_debian_package_declares_runtime_dependencies_and_desktop_files(
         self,

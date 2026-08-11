@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.ehstbr.imapexporter</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>GPL-3.0-only</project_license>
   <name>IMAP Exporter</name>
   <summary>Synchronize and analyze email metadata over IMAP</summary>
   <summary xml:lang="pt-BR">Sincronize e analise metadados de e-mail por IMAP</summary>
@@ -31,6 +31,7 @@
     <binary>imap-exporter</binary>
   </provides>
   <releases>
+    <release version="0.5.5" date="2026-08-11"/>
     <release version="0.5.4" date="2026-08-09"/>
     <release version="0.5.3" date="2026-08-09"/>
     <release version="0.5.2" date="2026-08-09"/>

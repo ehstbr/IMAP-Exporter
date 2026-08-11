@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.5.4" src="https://img.shields.io/badge/version-0.5.4-3584e4">
-  <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-26a269">
+  <img alt="Version 0.5.5" src="https://img.shields.io/badge/version-0.5.5-3584e4">
+  <img alt="GNU GPLv3 License" src="https://img.shields.io/badge/license-GPLv3-26a269">
   <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
   <img alt="Linux" src="https://img.shields.io/badge/platform-Linux-f6d32d">
@@ -153,7 +153,7 @@ in the provider's current documentation.
 On Debian, Ubuntu, Lubuntu, Linux Mint, and derivatives:
 
 ```bash
-sudo apt install ./imap-exporter_0.5.4_all.deb
+sudo apt install ./imap-exporter_0.5.5_all.deb
 ```
 
 Using `apt install` allows the system to install the declared dependencies:
@@ -277,4 +277,4 @@ Developed by **Eduardo Henrique Silva Teixeira**
 Website: <https://eduhcommerce.com.br>  
 Contact: <contato@eduhcommerce.com.br>
 
-Released under the [MIT License](LICENSE).
+Released under the [GNU General Public License version 3](LICENSE).

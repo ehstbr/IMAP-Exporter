@@ -2,11 +2,11 @@ AVISOS DE COMPONENTES E DEPENDÊNCIAS
 
 IMAP Exporter
 Copyright (c) 2026 Eduardo Henrique Silva Teixeira
-Licença: MIT
+Licença: GNU General Public License versão 3
 
 O código do IMAP Exporter, os ícones próprios distribuídos em assets/icons e
 os demais recursos criados especificamente para o projeto são disponibilizados
-sob a Licença MIT reproduzida na aba “Licença” e no arquivo LICENSE.
+sob a GNU GPLv3 reproduzida na aba “Licença” e no arquivo LICENSE.
 
 DEPENDÊNCIAS DO SISTEMA
 
@@ -34,7 +34,7 @@ Cada componente conserva seus próprios direitos autorais e termos:
 
 • Hicolor Icon Theme — infraestrutura de descoberta de ícones do ambiente
   desktop. O IMAP Exporter não redistribui ícones de terceiros: os ícones do
-  aplicativo incluídos no pacote são próprios e usam a Licença MIT.
+  aplicativo incluídos no pacote são próprios e usam a GNU GPLv3.
   Referência: https://www.freedesktop.org/wiki/Software/icon-theme/
 
 COMO CONSULTAR OS TEXTOS INSTALADOS

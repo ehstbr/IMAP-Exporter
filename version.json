@@ -1,15 +1,14 @@
 {
   "schema_version": 1,
-  "version": "0.5.4",
+  "version": "0.5.5",
   "mandatory": false,
-  "released_at": "2026-08-10T00:25:05Z",
-  "summary": "This maintenance release completes the update footer and fixes dismissal of optional update notices.",
+  "released_at": "2026-08-11T11:45:38Z",
+  "summary": "This release adopts the GNU General Public License version 3 across the application and its distribution metadata.",
   "changelog": [
-    "Centered each icon-and-label group inside the three update footer buttons.",
-    "Added standard theme icons to Download new version, Not now, and Close application.",
-    "Fixed Not now so it dismisses an optional update notice immediately.",
-    "Fixed the title-bar close button so it dismisses optional notices through the same lifecycle path.",
-    "Preserved the mandatory-update policy: closing a required notice still requests a safe application exit.",
-    "Added regression coverage for button alignment, action icons, and optional-window close behavior."
+    "Relicensed the IMAP Exporter source code and original project assets under GNU GPLv3.",
+    "Updated the About window with a GPLv3 summary and the complete official license text.",
+    "Updated English and Brazilian Portuguese translations, documentation, badges, and third-party notices.",
+    "Updated Debian copyright data and AppStream metadata to declare GPL-3.0-only.",
+    "Kept dependency licenses unchanged and expanded regression coverage for license declarations."
   ]
 }

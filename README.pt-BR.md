@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <img alt="Versão 0.5.4" src="https://img.shields.io/badge/vers%C3%A3o-0.5.4-3584e4">
-  <img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-26a269">
+  <img alt="Versão 0.5.5" src="https://img.shields.io/badge/vers%C3%A3o-0.5.5-3584e4">
+  <img alt="Licença GNU GPLv3" src="https://img.shields.io/badge/licen%C3%A7a-GPLv3-26a269">
   <img alt="Python 3.10 ou superior" src="https://img.shields.io/badge/Python-3.10%2B-3776ab">
   <img alt="GTK 4" src="https://img.shields.io/badge/interface-GTK%204-9141ac">
   <img alt="Linux" src="https://img.shields.io/badge/plataforma-Linux-f6d32d">
@@ -157,7 +157,7 @@ senha na documentação atual do serviço.
 Em Debian, Ubuntu, Lubuntu, Linux Mint e derivados:
 
 ```bash
-sudo apt install ./imap-exporter_0.5.4_all.deb
+sudo apt install ./imap-exporter_0.5.5_all.deb
 ```
 
 Ao usar `apt install`, o sistema instala as dependências declaradas: Python 3,
@@ -283,4 +283,4 @@ Desenvolvido por **Eduardo Henrique Silva Teixeira**
 Site: <https://eduhcommerce.com.br>  
 Contato: <contato@eduhcommerce.com.br>
 
-Distribuído sob a [Licença MIT](LICENSE).
+Distribuído sob a [GNU General Public License versão 3](LICENSE).
